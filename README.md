@@ -1,4 +1,4 @@
-# `preview-colour` Extension For Quarto
+# Preview Colour Extension For Quarto
 
 `preview-colour` is an extension for [Quarto](https://quarto.org) to provide access to LUA objects as metadata.
 
