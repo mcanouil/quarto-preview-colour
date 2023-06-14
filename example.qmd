@@ -1,0 +1,17 @@
+---
+title: "preview-colour Example"
+preview-colour:
+  code: true
+  text: true
+filters:
+  - preview-colour
+---
+
+The `#b22222` colour is a dark red colour, also known as firebrick.
+It is a web safe colour.
+The #b22222 colour hex could be obtained by blending #ff4444 with #640000.
+Closest websafe colour is: #cc3333.
+
+```{r}
+my_colour <- "#b22222"
+```
