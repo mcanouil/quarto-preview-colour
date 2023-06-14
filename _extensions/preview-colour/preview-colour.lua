@@ -34,8 +34,14 @@ function process_element(element, meta)
           hex .. colour_preview_mark
         )
         return pandoc.RawInline('html', new_text)
-      else
-        return element
+      elseif quarto.doc.is_format("latex") then
+        colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex, '#', '') .. "}{\\textbullet}"
+        new_text = string.gsub(
+          element.text,
+          hex,
+          "\\" .. hex .. colour_preview_mark
+        )
+        return pandoc.RawInline('latex', new_text)
       end
     end
   elseif element.t == 'Code' and meta['preview-colour']['code'] == true  then
@@ -43,9 +49,10 @@ function process_element(element, meta)
     if hex ~= nil then
       if quarto.doc.is_format("html:js") then
         colour_preview_mark = "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
-        return pandoc.Span({pandoc.Code(hex), pandoc.RawInline('html', colour_preview_mark)})
-      else
-        return element
+        return pandoc.Span({element, pandoc.RawInline('html', colour_preview_mark)})
+      elseif quarto.doc.is_format("latex") then
+        colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex, '#', '') .. "}{\\textbullet}"
+        return pandoc.Span({element, pandoc.RawInline('latex', colour_preview_mark)})
       end
     end
   elseif element.t == 'Para' then
