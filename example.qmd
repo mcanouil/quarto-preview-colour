@@ -5,13 +5,27 @@ preview-colour:
   text: true
 filters:
   - preview-colour
+format: native
 ---
 
 The `#b22222` colour is a dark red colour, also known as firebrick.
 It is a web safe colour.
-The #b22222 colour hex could be obtained by blending #ff4444 with #640000.
+The #b222 colour hex could be obtained by blending #ff4444 with #640000.
 Closest websafe colour is: #cc3333.
 
 ```{r}
 my_colour <- "#b22222"
 ```
+
+`rgb(10, 100, 200)` or `rgb(10,100,200)` is a blue colour and `hsl(240, 100%, 50%)` is a colour too.  
+But it does not work with rgb(10,100,200) and hsl(240,100%,50%).
+
+Supported inline code syntax:
+
+- [ ] Names one: `orange`
+- [x] hex codes: `#441100`
+- [x] short hex codes: `#123`
+- [ ] rgb: `rgb(10, 100, 200)`
+- [ ] rgb with %: `rgb(100%, 20%, 100%)`
+- [ ] hwb: `hwb(135 0% 40%)`
+- [ ] hsl: `hsl(240, 100%, 50%)`

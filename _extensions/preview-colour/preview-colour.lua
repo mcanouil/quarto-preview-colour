@@ -22,40 +22,73 @@
 # SOFTWARE.
 ]]
 
+function get_colour(element)
+  local hex = element.text:match('(#' .. string.rep('[0-9a-fA-F]', 6) .. ')')
+  if hex == nil then
+    hex = element.text:match('(rgb%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%))')
+  end
+  if hex == nil then
+    hex = element.text:match('(hsl%s*%(%s*%d+%s*,%s*%d+%s*%%,%s*%d+%s*%%s*%))')
+  end
+
+  return hex
+end
+
+function process_str(element)
+  hex = get_colour(element)
+  if hex ~= nil then
+    if quarto.doc.is_format("html:js") then
+      colour_preview_mark = "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
+      new_text = string.gsub(
+        element.text,
+        hex,
+        hex .. colour_preview_mark
+      )
+      return pandoc.RawInline('html', new_text)
+    elseif quarto.doc.is_format("latex") then
+      colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex, '#', '') .. "}{\\textbullet}"
+      new_text = string.gsub(
+        element.text,
+        hex,
+        "\\" .. hex .. colour_preview_mark
+      )
+      return pandoc.RawInline('latex', new_text)
+    end
+  end
+end
+
+function process_code(element)
+  hex = get_colour(element)
+  if hex ~= nil then
+    if quarto.doc.is_format("html:js") then
+      colour_preview_mark = "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
+      return pandoc.Span({element, pandoc.RawInline('html', colour_preview_mark)})
+    elseif quarto.doc.is_format("latex") then
+      colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex, '#', '') .. "}{\\textbullet}"
+      return pandoc.Span({element, pandoc.RawInline('latex', colour_preview_mark)})
+    end
+  end
+end
+
 function process_element(element, meta)
   if element.t == 'Str' and meta['preview-colour']['text'] == true then
-    local hex = element.text:match('(#' .. string.rep('[0-9a-fA-F]', 6) .. ')')
-    if hex ~= nil then
-      if quarto.doc.is_format("html:js") then
-        colour_preview_mark = "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
-        new_text = string.gsub(
-          element.text,
-          hex,
-          hex .. colour_preview_mark
-        )
-        return pandoc.RawInline('html', new_text)
-      elseif quarto.doc.is_format("latex") then
-        colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex, '#', '') .. "}{\\textbullet}"
-        new_text = string.gsub(
-          element.text,
-          hex,
-          "\\" .. hex .. colour_preview_mark
-        )
-        return pandoc.RawInline('latex', new_text)
+    return process_str(element)
+  elseif element.t == 'Code' and meta['preview-colour']['code'] == true then
+    return process_code(element)
+  elseif element.t == 'Para' or element.t == 'Plain' then
+    new_content = {}
+    for i, child in ipairs(element.content) do
+      new_child = process_element(child, meta)
+      if new_child ~= nil then
+        table.insert(new_content, new_child)
+      else
+        table.insert(new_content, child)
       end
     end
-  elseif element.t == 'Code' and meta['preview-colour']['code'] == true  then
-    local hex = element.text:match('^(#' .. string.rep('[0-9a-fA-F]', 6) .. ')$')
-    if hex ~= nil then
-      if quarto.doc.is_format("html:js") then
-        colour_preview_mark = "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
-        return pandoc.Span({element, pandoc.RawInline('html', colour_preview_mark)})
-      elseif quarto.doc.is_format("latex") then
-        colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex, '#', '') .. "}{\\textbullet}"
-        return pandoc.Span({element, pandoc.RawInline('latex', colour_preview_mark)})
-      end
-    end
-  elseif element.t == 'Para' then
+    element.content = new_content
+    return element
+  elseif element.t == 'BulletList' then
+    quarto.log.output("In BulletList")
     new_content = {}
     for i, child in ipairs(element.content) do
       new_child = process_element(child, meta)
