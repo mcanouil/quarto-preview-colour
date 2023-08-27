@@ -5,11 +5,10 @@ preview-colour:
   text: true
 filters:
   - preview-colour
-format:
-  native: default
-  html: default
-  pdf: default
+format: html
 ---
+
+## Usage
 
 The `#b22222` colour is a dark red colour, also known as firebrick.
 It is a web safe colour.
@@ -23,13 +22,13 @@ my_colour <- "#b22222"
 `rgb(10, 100, 200)` or `rgb(10,100,200)` is a blue colour and `hsl(240, 100%, 50%)` is a colour too.  
 But it does not work with rgb(10,100,200) and hsl(240,100%,50%).
 
-Supported inline code syntax:
+## Supported inline code syntax
 
-- [ ] Names one: `orange` (will probably never be supported)
+- [ ] Names one: `orange` (*will probably never be supported*)
 - [x] hex codes:
   - [x] code: `#441100`
   - [x] text: #441100
-- [x] short hex codes (currently not supported for `pdf` output):
+- [x] short hex codes (*currently not supported for `pdf` output*):
   - [x] code: `#123`
   - [x] text: #123
 - [ ] rgb:
