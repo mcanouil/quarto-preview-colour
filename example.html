@@ -92,12 +92,55 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </div>
   
 
+
 </header>
 
-<p>The <span><code>#b22222</code><span style="display: inline-block; color: #b22222;">◉</span></span> colour is a dark red colour, also known as firebrick. It is a web safe colour. The #b22222<span style="display: inline-block; color: #b22222;">◉</span> colour hex could be obtained by blending #ff4444<span style="display: inline-block; color: #ff4444;">◉</span> with #640000<span style="display: inline-block; color: #640000;">◉</span>. Closest websafe colour is: #cc3333<span style="display: inline-block; color: #cc3333;">◉</span>.</p>
+<p>The <span><code>#b22222</code><span style="display: inline-block; color: #b22222;">◉</span></span> colour is a dark red colour, also known as firebrick. It is a web safe colour. The #b22<span style="display: inline-block; color: #b22;">◉</span> colour hex could be obtained by blending #ff4444<span style="display: inline-block; color: #ff4444;">◉</span> with #640000<span style="display: inline-block; color: #640000;">◉</span>. Closest websafe colour is: #cc3333<span style="display: inline-block; color: #cc3333;">◉</span>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>my_colour <span class="ot">&lt;-</span> <span class="st">"#b22222"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p><span><code>rgb(10, 100, 200)</code><span style="display: inline-block; color: rgb(10, 100, 200);">◉</span></span> or <span><code>rgb(10,100,200)</code><span style="display: inline-block; color: rgb(10,100,200);">◉</span></span> is a blue colour and <span><code>hsl(240, 100%, 50%)</code><span style="display: inline-block; color: hsl(240, 100%, 50%);">◉</span></span> is a colour too.<br>
+But it does not work with rgb(10,100,200) and hsl(240,100%,50%).</p>
+<p>Supported inline code syntax:</p>
+<ul class="task-list">
+<li><label><input type="checkbox">Names one: <code>orange</code> (will probably never be supported)</label></li>
+<li><label><input type="checkbox" checked="">hex codes:</label>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="">code: <span><code>#441100</code><span style="display: inline-block; color: #441100;">◉</span></span></label></li>
+<li><label><input type="checkbox" checked="">text: #441100<span style="display: inline-block; color: #441100;">◉</span></label></li>
+</ul></li>
+<li><label><input type="checkbox" checked="">short hex codes (currently not supported for <code>pdf</code> output):</label>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="">code: <span><code>#123</code><span style="display: inline-block; color: #123;">◉</span></span></label></li>
+<li><label><input type="checkbox" checked="">text: #123<span style="display: inline-block; color: #123;">◉</span></label></li>
+</ul></li>
+<li><label><input type="checkbox">rgb:</label>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="">code: <span><code>rgb(10, 100, 200)</code><span style="display: inline-block; color: rgb(10, 100, 200);">◉</span></span></label></li>
+<li><label><input type="checkbox" checked="">code (no space): <span><code>rgb(10,100,200)</code><span style="display: inline-block; color: rgb(10,100,200);">◉</span></span></label></li>
+<li><label><input type="checkbox">text: rgb(10, 100, 200)</label></li>
+<li><label><input type="checkbox">text (no space): rgb(10,100,200)</label></li>
+</ul></li>
+<li><label><input type="checkbox">rgb with %:</label>
+<ul class="task-list">
+<li><label><input type="checkbox">code: <code>rgb(100%, 20%, 100%)</code></label></li>
+<li><label><input type="checkbox">code (no space): <code>rgb(100%,20%,100%)</code></label></li>
+<li><label><input type="checkbox">text: rgb(100%, 20%, 100%)</label></li>
+<li><label><input type="checkbox">text (no space): rgb(100%,20%,100%)</label></li>
+</ul></li>
+<li><label><input type="checkbox">hwb:</label>
+<ul class="task-list">
+<li><label><input type="checkbox">code: <code>hwb(135 0% 40%)</code></label></li>
+<li><label><input type="checkbox">text: hwb(135 0% 40%)</label></li>
+</ul></li>
+<li><label><input type="checkbox">hsl:</label>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="">code: <span><code>hsl(240, 100%, 50%)</code><span style="display: inline-block; color: hsl(240, 100%, 50%);">◉</span></span></label></li>
+<li><label><input type="checkbox" checked="">code (no space): <span><code>hsl(240,100%,50%)</code><span style="display: inline-block; color: hsl(240,100%,50%);">◉</span></span></label></li>
+<li><label><input type="checkbox">text: hsl(240, 100%, 50%)</label></li>
+<li><label><input type="checkbox">text (no space): hsl(240,100%,50%)</label></li>
+</ul></li>
+</ul>
 
 </main>
 <!-- /main column -->
@@ -219,6 +262,16 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   }
   const xrefs = window.document.querySelectorAll('a.quarto-xref');
   const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
     if (id.startsWith('sec-')) {
       // Special case sections, only their first couple elements
       const container = document.createElement("div");
@@ -231,6 +284,11 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
         return note.innerHTML;
       }
     } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
       return note.innerHTML;
     }
   }
@@ -240,34 +298,39 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       instance.disable();
       let url = xref.getAttribute('href');
       let hash = undefined; 
-      try { hash = new URL(url).hash; } catch {}
-      const id = hash.replace(/^#\/?/, "");
-      const note = window.document.getElementById(id);
-      if (note !== null) {
-        try {
-          const html = processXRef(id, note);
-          instance.setContent(html);
-        } finally {
-          instance.enable();
-          instance.show();
-        }
+      if (url.startsWith('#')) {
+        hash = url;
       } else {
-        // See if we can fetch this
-        fetch(url.split('#')[0])
-        .then(res => res.text())
-        .then(html => {
-          const parser = new DOMParser();
-          const htmlDoc = parser.parseFromString(html, "text/html");
-          const note = htmlDoc.getElementById(id);
-          console.log(htmlDoc.body.innerHTML);
-          if (note !== null) {
-            const html = processXRef(id, note);
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
             instance.setContent(html);
-          } 
-        }).finally(() => {
-          instance.enable();
-          instance.show();
-        });
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
       }
     }, function(instance) {
     });
@@ -339,6 +402,33 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
         });
         selectedAnnoteEl = undefined;
       };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        console.log("RESIZE");
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
       // Attach click handler to the DT
       const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
       for (const annoteDlNode of annoteDls) {
