@@ -2,3 +2,7 @@
 *.pdf
 *_files/
 /.luarc.json
+*.native
+*.log
+*.aux
+*.tex

@@ -5,12 +5,15 @@ preview-colour:
   text: true
 filters:
   - preview-colour
-format: native
+format:
+  native: default
+  html: default
+  pdf: default
 ---
 
 The `#b22222` colour is a dark red colour, also known as firebrick.
 It is a web safe colour.
-The #b222 colour hex could be obtained by blending #ff4444 with #640000.
+The #b22 colour hex could be obtained by blending #ff4444 with #640000.
 Closest websafe colour is: #cc3333.
 
 ```{r}
@@ -22,10 +25,28 @@ But it does not work with rgb(10,100,200) and hsl(240,100%,50%).
 
 Supported inline code syntax:
 
-- [ ] Names one: `orange`
-- [x] hex codes: `#441100`
-- [x] short hex codes: `#123`
-- [ ] rgb: `rgb(10, 100, 200)`
-- [ ] rgb with %: `rgb(100%, 20%, 100%)`
-- [ ] hwb: `hwb(135 0% 40%)`
-- [ ] hsl: `hsl(240, 100%, 50%)`
+- [ ] Names one: `orange` (will probably never be supported)
+- [x] hex codes:
+  - [x] code: `#441100`
+  - [x] text: #441100
+- [x] short hex codes (currently not supported for `pdf` output):
+  - [x] code: `#123`
+  - [x] text: #123
+- [ ] rgb:
+  - [x] code: `rgb(10, 100, 200)`
+  - [x] code (no space): `rgb(10,100,200)`
+  - [ ] text: rgb(10, 100, 200)
+  - [ ] text (no space): rgb(10,100,200)
+- [ ] rgb with %: 
+  - [ ] code: `rgb(100%, 20%, 100%)`
+  - [ ] code (no space): `rgb(100%,20%,100%)`
+  - [ ] text: rgb(100%, 20%, 100%)
+  - [ ] text (no space): rgb(100%,20%,100%)
+- [ ] hwb:
+  - [ ] code: `hwb(135 0% 40%)`
+  - [ ] text: hwb(135 0% 40%)
+- [ ] hsl:
+  - [x] code: `hsl(240, 100%, 50%)`
+  - [x] code (no space): `hsl(240,100%,50%)`
+  - [ ] text: hsl(240, 100%, 50%)
+  - [ ] text (no space): hsl(240,100%,50%)
