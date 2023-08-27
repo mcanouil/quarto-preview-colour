@@ -23,7 +23,21 @@
 ]]
 
 function get_colour(element)
-  local hex = element.text:match('(#' .. string.rep('[0-9a-fA-F]', 6) .. ')')
+  function get_hex_color(n)
+    return '#' .. string.rep('[0-9a-fA-F]', n)
+  end
+
+  local hex = nil
+  for i = 6, 3, -1 do
+    hex = element.text:match('(' .. get_hex_color(i) .. ')')
+    if (i == 5 or i == 4) and hex ~= nil then
+      hex = nil
+      break
+    end
+    if hex ~= nil and (i == 6 or i == 3) then
+      break
+    end
+  end
   if hex == nil then
     hex = element.text:match('(rgb%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%))')
   end
