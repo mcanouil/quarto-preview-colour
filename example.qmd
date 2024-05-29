@@ -5,7 +5,21 @@ preview-colour:
   text: true
 filters:
   - preview-colour
-format: html
+format:
+  html:
+    output-file: index
+  pdf:
+    output-file: preview-colour-latex
+    papersize: a4
+    margin:
+      x: 2.5cm
+      y: 2.5cm
+  revealjs:
+    output-file: preview-colour-revealjs
+  beamer:
+    output-file: preview-colour-beamer
+    aspectratio: 169
+format-links: true
 ---
 
 ## Usage
