@@ -20,6 +20,7 @@ format:
     output-file: preview-colour-beamer
     aspectratio: 169
 format-links: true
+engine: markdown
 ---
 
 ## Usage
@@ -29,7 +30,7 @@ It is a web safe colour.
 The #b22 colour hex could be obtained by blending #ff4444 with #640000.
 Closest websafe colour is: #cc3333.
 
-```{r}
+```{.r}
 my_colour <- "#b22222"
 ```
 
