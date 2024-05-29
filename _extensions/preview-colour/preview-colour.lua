@@ -31,6 +31,14 @@ local preview_colour_meta = {
   ["code"] = true
 }
 
+function RGBtoHTML(rgb)
+  local r, g, b = rgb:match("rgb%((%d+)%s*,%s*(%d+)%s*,%s*(%d+)%)")
+  r = tonumber(r)
+  g = tonumber(g)
+  b = tonumber(b)
+  return string.upper(string.format("#%02x%02x%02x", r, g, b))
+end
+
 function get_colour_preview_meta(meta)
   local preview_colour_text = true
   local preview_colour_code = true
@@ -50,7 +58,6 @@ function get_colour_preview_meta(meta)
   return meta
 end
 
-
 function get_colour(element)
   function get_hex_color(n)
     return '#' .. string.rep('[0-9a-fA-F]', n)
@@ -69,6 +76,9 @@ function get_colour(element)
   end
   if hex == nil then
     hex = element.text:match('(rgb%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%))')
+    if hex ~= nil then
+      hex = RGBtoHTML(hex)
+    end
   end
   if hex == nil then
     hex = element.text:match('(hsl%s*%(%s*%d+%s*,%s*%d+%s*%%,%s*%d+%s*%%s*%))')
@@ -93,7 +103,8 @@ function process_str(element, meta)
         )
         return pandoc.RawInline('html', new_text)
       elseif quarto.doc.is_format("latex") then
-        colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex, '#', '') .. "}{\\textbullet}"
+        hex_colour_six = hex:gsub("[^#]", "%1%1")
+        colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
         new_text = string.gsub(
           element.text,
           hex,
