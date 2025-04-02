@@ -27,10 +27,13 @@ engine: markdown
 
 The `#b22222` colour is a dark red colour, also known as firebrick.
 It is a web safe colour.
+
+::: {.content-visible when-format="html"}
 The #b22 colour hex could be obtained by blending #ff4444 with #640000.
 Closest websafe colour is: #cc3333.
+:::
 
-```{.r}
+```r
 my_colour <- "#b22222"
 ```
 
@@ -43,7 +46,7 @@ But it does not work with rgb(10,100,200) and hsl(240,100%,50%).
 - [x] hex codes:
   - [x] code: `#441100`
   - [x] text: #441100
-- [x] short hex codes (*currently not supported for `pdf` output*):
+- [x] short hex codes:
   - [x] code: `#123`
   - [x] text: #123
 - [ ] rgb:
