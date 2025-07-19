@@ -1,15 +1,30 @@
 ---
 title: "preview-colour Example"
-preview-colour:
-  code: true
-  text: true
-filters:
-  - preview-colour
 format:
   html:
     output-file: index
-  pdf:
-    output-file: preview-colour-latex
+  # typst:
+  #   output-file: preview-colour-typst
+  #   papersize: a4
+  #   margin:
+  #     x: 2.5cm
+  #     y: 2.5cm
+  pdf-xelatex:
+    output-file: preview-colour-xelatex
+    papersize: a4
+    margin:
+      x: 2.5cm
+      y: 2.5cm
+  pdf-lualatex:
+    output-file: preview-colour-lualatex
+    pdf-engine: lualatex
+    papersize: a4
+    margin:
+      x: 2.5cm
+      y: 2.5cm
+  pdf-pdflatex:
+    output-file: preview-colour-pdflatex
+    pdf-engine: lualatex
     papersize: a4
     margin:
       x: 2.5cm
@@ -19,18 +34,37 @@ format:
   beamer:
     output-file: preview-colour-beamer
     aspectratio: 169
-format-links: true
+format-links:
+  - html
+  # - typst
+  - format: pdf-xelatex
+    text: "PDF (XeLaTeX)"
+  - format: pdf-lualatex
+    text: "PDF (LuaLaTeX)"
+  - format: pdf-pdflatex
+    text: "PDF (PDFLaTeX)"
+  - revealjs
+  - beamer
+embed-resources: true
 engine: markdown
+filters:
+  - preview-colour
+preview-colour:
+  code: true
+  text: true
 ---
 
 ## Usage
 
 The `#b22222` colour is a dark red colour, also known as firebrick.
 It is a web safe colour.
+
+::: {.content-visible when-format="html"}
 The #b22 colour hex could be obtained by blending #ff4444 with #640000.
 Closest websafe colour is: #cc3333.
+:::
 
-```{.r}
+```r
 my_colour <- "#b22222"
 ```
 
@@ -43,15 +77,15 @@ But it does not work with rgb(10,100,200) and hsl(240,100%,50%).
 - [x] hex codes:
   - [x] code: `#441100`
   - [x] text: #441100
-- [x] short hex codes (*currently not supported for `pdf` output*):
-  - [x] code: `#123`
-  - [x] text: #123
+- [x] short hex codes:
+  - [x] code: `#F03`
+  - [x] text: #F03
 - [ ] rgb:
   - [x] code: `rgb(10, 100, 200)`
   - [x] code (no space): `rgb(10,100,200)`
   - [ ] text: rgb(10, 100, 200)
   - [ ] text (no space): rgb(10,100,200)
-- [ ] rgb with %: 
+- [ ] rgb with %:
   - [ ] code: `rgb(100%, 20%, 100%)`
   - [ ] code (no space): `rgb(100%,20%,100%)`
   - [ ] text: rgb(100%, 20%, 100%)
