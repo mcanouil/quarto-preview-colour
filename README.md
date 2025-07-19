@@ -38,7 +38,7 @@ Configure which elements should show colour previews:
 ```yaml
 extensions:
   preview-colour:
-    code: true   # Enable previews for inline code
+    code: true    # Enable previews for inline code
     text: false   # Enable previews for regular text
 ```
 
