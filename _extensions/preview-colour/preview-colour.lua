@@ -336,6 +336,75 @@ function get_colour(element)
   return hex, original_colour_text
 end
 
+--- Create colour preview mark for HTML format.
+--- @param hex string Hex colour code
+--- @return string HTML colour preview mark
+local function create_html_colour_mark(hex)
+  return "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
+end
+
+--- Create colour preview mark for LaTeX format.
+--- @param hex string Hex colour code
+--- @return string LaTeX colour preview mark
+local function create_latex_colour_mark(hex)
+  local hex_colour_six = expand_hex_colour(hex)
+  return "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
+end
+
+--- Create colour preview mark for Typst format.
+--- @param hex string Hex colour code
+--- @return string Typst colour preview mark
+local function create_typst_colour_mark(hex)
+  local hex_colour_six = expand_hex_colour(hex)
+  return "#text(fill: rgb(\"" .. string.lower(hex_colour_six) .. "\"))[◉]"
+end
+
+--- Get format-specific colour preview mark.
+--- @param hex string Hex colour code
+--- @return string|nil format Format name (html, latex, typst) or nil if unsupported
+--- @return string|nil mark Colour preview mark for the format or nil if unsupported
+local function get_colour_mark_for_format(hex)
+  if quarto.doc.is_format("html:js") then
+    return "html", create_html_colour_mark(hex)
+  elseif quarto.doc.is_format("latex") then
+    return "latex", create_latex_colour_mark(hex)
+  elseif quarto.doc.is_format("typst") then
+    return "typst", create_typst_colour_mark(hex)
+  end
+  return nil, nil
+end
+
+--- Process text replacement for string elements with colour previews.
+--- @param element table Pandoc element containing text
+--- @param hex string Hex colour code
+--- @param original_colour_text string Original colour text found in element
+--- @param format string Output format name
+--- @param colour_mark string Colour preview mark for the format
+--- @return table|nil Modified pandoc element or nil
+local function process_text_replacement(element, hex, original_colour_text, format, colour_mark)
+  local escaped_original = original_colour_text
+  if format == "latex" then
+    escaped_original = escape_latex(original_colour_text)
+  elseif format == "typst" then
+    escaped_original = escape_typst(original_colour_text)
+  end
+  
+  local escaped_pattern = escape_lua_pattern(original_colour_text)
+  local escaped_replacement = string.gsub(escaped_original, "%%", "%%%%") .. colour_mark
+  local new_text = string.gsub(element.text, escaped_pattern, escaped_replacement)
+  
+  return pandoc.RawInline(format, new_text)
+end
+
+--- Process code element with colour preview.
+--- @param element table Pandoc Code element
+--- @param format string Output format name
+--- @param colour_mark string Colour preview mark for the format
+--- @return table Modified pandoc element
+local function process_code_element(element, format, colour_mark)
+  return pandoc.Span({element, pandoc.RawInline(format, colour_mark)})
+end
+
 --- Process string elements to add colour previews in text.
 --- @param element table Pandoc Str element
 --- @param meta table<string, any> Document metadata (currently unused)
@@ -344,44 +413,12 @@ function process_str(element, meta)
   if preview_colour_meta['text'] == false then
     return element
   end
-  if preview_colour_meta['text'] == true then
-    local hex, original_colour_text = get_colour(element)
-    if hex ~= nil and original_colour_text ~= nil then
-      if quarto.doc.is_format("html:js") then
-        local colour_preview_mark = "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
-        local escaped_pattern = escape_lua_pattern(original_colour_text)
-        local escaped_replacement = string.gsub(original_colour_text, "%%", "%%%%") .. colour_preview_mark
-        local new_text = string.gsub(
-          element.text,
-          escaped_pattern,
-          escaped_replacement
-        )
-        return pandoc.RawInline('html', new_text)
-      elseif quarto.doc.is_format("latex") then
-        local hex_colour_six = expand_hex_colour(hex)
-        local colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
-        local escaped_original = escape_latex(original_colour_text)
-        local escaped_pattern = escape_lua_pattern(original_colour_text)
-        local escaped_replacement = string.gsub(escaped_original, "%%", "%%%%") .. colour_preview_mark
-        local new_text = string.gsub(
-          element.text,
-          escaped_pattern,
-          escaped_replacement
-        )
-        return pandoc.RawInline('latex', new_text)
-      elseif quarto.doc.is_format("typst") then
-        local hex_colour_six = expand_hex_colour(hex)
-        local colour_preview_mark = "#text(fill: rgb(\"" .. string.lower(hex_colour_six) .. "\"))[◉]"
-        local escaped_original = escape_typst(original_colour_text)
-        local escaped_pattern = escape_lua_pattern(original_colour_text)
-        local escaped_replacement = string.gsub(escaped_original, "%%", "%%%%") .. colour_preview_mark
-        local new_text = string.gsub(
-          element.text,
-          escaped_pattern,
-          escaped_replacement
-        )
-        return pandoc.RawInline('typst', new_text)
-      end
+  
+  local hex, original_colour_text = get_colour(element)
+  if hex ~= nil and original_colour_text ~= nil then
+    local format, colour_mark = get_colour_mark_for_format(hex)
+    if format and colour_mark then
+      return process_text_replacement(element, hex, original_colour_text, format, colour_mark)
     end
   end
 end
@@ -393,21 +430,12 @@ function process_code(element)
   if preview_colour_meta['code'] == false then
     return element
   end
-  if preview_colour_meta['code'] == true then
-    local hex, original_colour_text = get_colour(element)
-    if hex ~= nil and original_colour_text ~= nil then
-      if quarto.doc.is_format("html:js") then
-        local colour_preview_mark = "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
-        return pandoc.Span({element, pandoc.RawInline('html', colour_preview_mark)})
-      elseif quarto.doc.is_format("latex") then
-        local hex_colour_six = expand_hex_colour(hex)
-        local colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
-        return pandoc.Span({element, pandoc.RawInline('latex', colour_preview_mark)})
-      elseif quarto.doc.is_format("typst") then
-        local hex_colour_six = expand_hex_colour(hex)
-        local colour_preview_mark = "#text(fill: rgb(\"" .. string.lower(hex_colour_six) .. "\"))[◉]"
-        return pandoc.Span({element, pandoc.RawInline('typst', colour_preview_mark)})
-      end
+  
+  local hex, original_colour_text = get_colour(element)
+  if hex ~= nil and original_colour_text ~= nil then
+    local format, colour_mark = get_colour_mark_for_format(hex)
+    if format and colour_mark then
+      return process_code_element(element, format, colour_mark)
     end
   end
 end
