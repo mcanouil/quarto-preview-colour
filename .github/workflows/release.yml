@@ -33,6 +33,6 @@ jobs:
     secrets: inherit
     with:
       version: "${{ github.event.inputs.version }}"
-      formats: "html typst pdf-xelatex pdf-lualatex pdf-pdflatex revealjs beamer"
+      formats: "html typst pdf-xelatex pdf-lualatex pdf-pdflatex revealjs beamer docx pptx"
       tinytex: true
       quarto: "${{ github.event.inputs.quarto }}"
