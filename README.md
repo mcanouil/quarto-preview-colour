@@ -24,6 +24,11 @@ filters:
   - preview-colour
 ```
 
+````qmd
+- code: `#441100` or `rgb(10, 100, 200)`
+- text: #441100 or rgb(10,100,200)
+````
+
 ### Configuration Options
 
 Configure which elements should show colour previews:
