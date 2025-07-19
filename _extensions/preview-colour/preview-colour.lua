@@ -39,6 +39,14 @@ function RGBtoHTML(rgb)
   return string.upper(string.format("#%02x%02x%02x", r, g, b))
 end
 
+function RGBPercentToHTML(rgb)
+  local r, g, b = rgb:match("rgb%((%d+)%%%s*,%s*(%d+)%%%s*,%s*(%d+)%%%s*%)")
+  r = math.floor(tonumber(r) * 255 / 100 + 0.5)
+  g = math.floor(tonumber(g) * 255 / 100 + 0.5)
+  b = math.floor(tonumber(b) * 255 / 100 + 0.5)
+  return string.upper(string.format("#%02x%02x%02x", r, g, b))
+end
+
 function HSLtoHTML(hsl)
   local h, s, l = hsl:match("hsl%((%d+)%s*,%s*(%d+)%%%s*,%s*(%d+)%%%s*%)")
   h = tonumber(h) / 360
@@ -138,6 +146,12 @@ function get_colour(element)
     original_colour_text = element.text:match('(rgb%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%))')
     if original_colour_text ~= nil then
       hex = RGBtoHTML(original_colour_text)
+    end
+  end
+  if hex == nil then
+    original_colour_text = element.text:match('(rgb%s*%(%s*%d+%%%s*,%s*%d+%%%s*,%s*%d+%%%s*%))')
+    if original_colour_text ~= nil then
+      hex = RGBPercentToHTML(original_colour_text)
     end
   end
   if hex == nil then

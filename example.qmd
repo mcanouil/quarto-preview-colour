@@ -86,8 +86,8 @@ But it does not work with rgb(10,100,200) and hsl(240,100%,50%).
   - [ ] text: rgb(10, 100, 200)
   - [ ] text (no space): rgb(10,100,200)
 - [ ] rgb with %:
-  - [ ] code: `rgb(100%, 20%, 100%)`
-  - [ ] code (no space): `rgb(100%,20%,100%)`
+  - [x] code: `rgb(100%, 20%, 100%)`
+  - [x] code (no space): `rgb(100%,20%,100%)`
   - [ ] text: rgb(100%, 20%, 100%)
   - [ ] text (no space): rgb(100%,20%,100%)
 - [ ] hwb:
