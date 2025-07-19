@@ -274,11 +274,11 @@ function get_colour_preview_meta(meta)
   local preview_colour_text = get_preview_colour_option('text', meta)
   local preview_colour_code = get_preview_colour_option('code', meta)
   
-  meta['preview-colour'] = {
+  meta['extensions']['preview-colour'] = {
     ["text"] = preview_colour_text,
     ["code"] = preview_colour_code
   }
-  preview_colour_meta = meta['preview-colour']
+  preview_colour_meta = meta['extensions']['preview-colour']
   return meta
 end
 
