@@ -36,7 +36,7 @@ format:
     aspectratio: 169
 format-links:
   - html
-  - typst
+  # - typst
   - format: pdf-xelatex
     text: "PDF (XeLaTeX)"
   - format: pdf-lualatex
@@ -78,8 +78,8 @@ But it does not work with rgb(10,100,200) and hsl(240,100%,50%).
   - [x] code: `#441100`
   - [x] text: #441100
 - [x] short hex codes:
-  - [x] code: `#123`
-  - [x] text: #123
+  - [x] code: `#F03`
+  - [x] text: #F03
 - [ ] rgb:
   - [x] code: `rgb(10, 100, 200)`
   - [x] code (no space): `rgb(10,100,200)`

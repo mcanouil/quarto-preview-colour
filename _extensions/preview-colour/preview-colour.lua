@@ -39,6 +39,63 @@ function RGBtoHTML(rgb)
   return string.upper(string.format("#%02x%02x%02x", r, g, b))
 end
 
+function HSLtoHTML(hsl)
+  local h, s, l = hsl:match("hsl%((%d+)%s*,%s*(%d+)%%%s*,%s*(%d+)%%%s*%)")
+  h = tonumber(h) / 360
+  s = tonumber(s) / 100
+  l = tonumber(l) / 100
+  
+  local function hue_to_rgb(p, q, t)
+    if t < 0 then t = t + 1 end
+    if t > 1 then t = t - 1 end
+    if t < 1/6 then return p + (q - p) * 6 * t end
+    if t < 1/2 then return q end
+    if t < 2/3 then return p + (q - p) * (2/3 - t) * 6 end
+    return p
+  end
+  
+  local r, g, b
+  if s == 0 then
+    r, g, b = l, l, l -- achromatic
+  else
+    local q = l < 0.5 and l * (1 + s) or l + s - l * s
+    local p = 2 * l - q
+    r = hue_to_rgb(p, q, h + 1/3)
+    g = hue_to_rgb(p, q, h)
+    b = hue_to_rgb(p, q, h - 1/3)
+  end
+  
+  r = math.floor(r * 255 + 0.5)
+  g = math.floor(g * 255 + 0.5)
+  b = math.floor(b * 255 + 0.5)
+  
+  return string.upper(string.format("#%02x%02x%02x", r, g, b))
+end
+
+function escape_latex(text)
+  -- Escape special LaTeX characters
+  -- Note: Order matters - backslash must be escaped first
+  text = string.gsub(text, "\\", "\\textbackslash{}")
+  text = string.gsub(text, "%{", "\\{")
+  text = string.gsub(text, "%}", "\\}")
+  text = string.gsub(text, "%$", "\\$")
+  text = string.gsub(text, "%&", "\\&")
+  text = string.gsub(text, "%%", "\\%%")  -- Escape % in replacement string
+  text = string.gsub(text, "%#", "\\#")
+  text = string.gsub(text, "%^", "\\textasciicircum{}")
+  text = string.gsub(text, "%_", "\\_")
+  text = string.gsub(text, "~", "\\textasciitilde{}")
+  return text
+end
+
+function expand_hex_colour(hex)
+  -- Convert 3-character hex to 6-character hex (e.g., #123 -> #112233)
+  if string.len(hex) == 4 then  -- #123 format
+    return string.gsub(hex, "#(%x)(%x)(%x)", "#%1%1%2%2%3%3")
+  end
+  return hex  -- Already 6-character or other format
+end
+
 function get_colour_preview_meta(meta)
   local preview_colour_text = true
   local preview_colour_code = true
@@ -64,6 +121,8 @@ function get_colour(element)
   end
 
   local hex = nil
+  local original_colour_text = nil
+  
   for i = 6, 3, -1 do
     hex = element.text:match('(' .. get_hex_color(i) .. ')')
     if (i == 5 or i == 4) and hex ~= nil then
@@ -71,20 +130,24 @@ function get_colour(element)
       break
     end
     if hex ~= nil and (i == 6 or i == 3) then
+      original_colour_text = hex
       break
     end
   end
   if hex == nil then
-    hex = element.text:match('(rgb%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%))')
-    if hex ~= nil then
-      hex = RGBtoHTML(hex)
+    original_colour_text = element.text:match('(rgb%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%))')
+    if original_colour_text ~= nil then
+      hex = RGBtoHTML(original_colour_text)
     end
   end
   if hex == nil then
-    hex = element.text:match('(hsl%s*%(%s*%d+%s*,%s*%d+%s*%%,%s*%d+%s*%%s*%))')
+    original_colour_text = element.text:match('(hsl%s*%(%s*%d+%s*,%s*%d+%s*%%,%s*%d+%s*%%s*%))')
+    if original_colour_text ~= nil then
+      hex = HSLtoHTML(original_colour_text)
+    end
   end
 
-  return hex
+  return hex, original_colour_text
 end
 
 function process_str(element, meta)
@@ -92,23 +155,24 @@ function process_str(element, meta)
     return element
   end
   if preview_colour_meta['text'] == true then
-    hex = get_colour(element)
-    if hex ~= nil then
+    local hex, original_colour_text = get_colour(element)
+    if hex ~= nil and original_colour_text ~= nil then
       if quarto.doc.is_format("html:js") then
         colour_preview_mark = "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
         new_text = string.gsub(
           element.text,
-          hex,
-          hex .. colour_preview_mark
+          original_colour_text,
+          original_colour_text .. colour_preview_mark
         )
         return pandoc.RawInline('html', new_text)
       elseif quarto.doc.is_format("latex") then
-        hex_colour_six = hex:gsub("[^#]", "%1%1")
+        local hex_colour_six = expand_hex_colour(hex)
         colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
+        local escaped_original = escape_latex(original_colour_text)
         new_text = string.gsub(
           element.text,
-          hex,
-          "\\" .. hex .. colour_preview_mark
+          original_colour_text,
+          escaped_original .. colour_preview_mark
         )
         return pandoc.RawInline('latex', new_text)
       end
@@ -121,13 +185,14 @@ function process_code(element)
     return element
   end
   if preview_colour_meta['code'] == true then
-    hex = get_colour(element)
-    if hex ~= nil then
+    local hex, original_colour_text = get_colour(element)
+    if hex ~= nil and original_colour_text ~= nil then
       if quarto.doc.is_format("html:js") then
         colour_preview_mark = "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
         return pandoc.Span({element, pandoc.RawInline('html', colour_preview_mark)})
       elseif quarto.doc.is_format("latex") then
-        colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex, '#', '') .. "}{\\textbullet}"
+        local hex_colour_six = expand_hex_colour(hex)
+        colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
         return pandoc.Span({element, pandoc.RawInline('latex', colour_preview_mark)})
       end
     end
