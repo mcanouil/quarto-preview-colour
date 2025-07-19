@@ -3,12 +3,12 @@ title: "preview-colour Example"
 format:
   html:
     output-file: index
-  # typst:
-  #   output-file: preview-colour-typst
-  #   papersize: a4
-  #   margin:
-  #     x: 2.5cm
-  #     y: 2.5cm
+  typst:
+    output-file: preview-colour-typst
+    papersize: a4
+    margin:
+      x: 2.5cm
+      y: 2.5cm
   pdf-xelatex:
     output-file: preview-colour-xelatex
     papersize: a4
@@ -36,7 +36,7 @@ format:
     aspectratio: 169
 format-links:
   - html
-  # - typst
+  - typst
   - format: pdf-xelatex
     text: "PDF (XeLaTeX)"
   - format: pdf-lualatex
@@ -60,24 +60,7 @@ extensions:
     text: true
 ---
 
-## Usage
-
-The `#b22222` colour is a dark red colour, also known as firebrick.
-It is a web safe colour.
-
-::: {.content-visible when-format="html"}
-The #b22 colour hex could be obtained by blending #ff4444 with #640000.
-Closest websafe colour is: #cc3333.
-:::
-
-```r
-my_colour <- "#b22222"
-```
-
-`rgb(10, 100, 200)` or `rgb(10,100,200)` is a blue colour and `hsl(240, 100%, 50%)` is a colour too.  
-But it does not work with rgb(10,100,200) and hsl(240,100%,50%).
-
-## Supported inline code syntax
+## Supported Colour Formats
 
 - [ ] Names one: `orange` (*will probably never be supported*)
 - [x] hex codes:

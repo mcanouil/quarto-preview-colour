@@ -227,6 +227,15 @@ function escape_latex(text)
   return text
 end
 
+--- Escape special Typst characters in text.
+--- @param text string The text to escape
+--- @return string The escaped text safe for Typst
+function escape_typst(text)
+  -- Escape special Typst characters
+  text = string.gsub(text, "%#", "\\#")
+  return text
+end
+
 --- Escape special Lua pattern characters for use in string.gsub.
 --- @param text string The text containing characters to escape
 --- @return string The escaped text safe for Lua patterns
@@ -360,6 +369,18 @@ function process_str(element, meta)
           escaped_replacement
         )
         return pandoc.RawInline('latex', new_text)
+      elseif quarto.doc.is_format("typst") then
+        local hex_colour_six = expand_hex_colour(hex)
+        local colour_preview_mark = "#text(fill: rgb(\"" .. string.lower(hex_colour_six) .. "\"))[◉]"
+        local escaped_original = escape_typst(original_colour_text)
+        local escaped_pattern = escape_lua_pattern(original_colour_text)
+        local escaped_replacement = string.gsub(escaped_original, "%%", "%%%%") .. colour_preview_mark
+        local new_text = string.gsub(
+          element.text,
+          escaped_pattern,
+          escaped_replacement
+        )
+        return pandoc.RawInline('typst', new_text)
       end
     end
   end
@@ -382,6 +403,10 @@ function process_code(element)
         local hex_colour_six = expand_hex_colour(hex)
         local colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
         return pandoc.Span({element, pandoc.RawInline('latex', colour_preview_mark)})
+      elseif quarto.doc.is_format("typst") then
+        local hex_colour_six = expand_hex_colour(hex)
+        local colour_preview_mark = "#text(fill: rgb(\"" .. string.lower(hex_colour_six) .. "\"))[◉]"
+        return pandoc.Span({element, pandoc.RawInline('typst', colour_preview_mark)})
       end
     end
   end
