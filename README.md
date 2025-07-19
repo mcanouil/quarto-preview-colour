@@ -76,12 +76,12 @@ Here is the source code for a minimal example: [`example.qmd`](example.qmd).
 
 Outputs of `example.qmd`:
 
-- [HTML](https://m.canouil.dev/quarto-preview-colour-text/)
-- [Typst/PDF](https://m.canouil.dev/quarto-preview-colour-text/preview-colour-typst.pdf)
-- [LaTeX/PDF (XeLaTeX)](https://m.canouil.dev/quarto-preview-colour-text/preview-colour-xelatex.pdf)
-- [LaTeX/PDF (LuaLaTeX)](https://m.canouil.dev/quarto-preview-colour-text/preview-colour-lualatex.pdf)
-- [LaTeX/PDF (PDFLaTeX)](https://m.canouil.dev/quarto-preview-colour-text/preview-colour-pdflatex.pdf)
-- [Reveal.js](https://m.canouil.dev/quarto-preview-colour-text/preview-colour-revealjs.html)
-- [Beamer/PDF](https://m.canouil.dev/quarto-preview-colour-text/preview-colour-beamer.pdf)
-- [Word/Docx](https://m.canouil.dev/quarto-highlight-text/highlight-openxml.docx)
-- [PowerPoint/Pptx](https://m.canouil.dev/quarto-highlight-text/highlight-pptx.pptx)
+- [HTML](https://m.canouil.dev/quarto-preview-colour/)
+- [Typst/PDF](https://m.canouil.dev/quarto-preview-colour/preview-colour-typst.pdf)
+- [LaTeX/PDF (XeLaTeX)](https://m.canouil.dev/quarto-preview-colour/preview-colour-xelatex.pdf)
+- [LaTeX/PDF (LuaLaTeX)](https://m.canouil.dev/quarto-preview-colour/preview-colour-lualatex.pdf)
+- [LaTeX/PDF (PDFLaTeX)](https://m.canouil.dev/quarto-preview-colour/preview-colour-pdflatex.pdf)
+- [Reveal.js](https://m.canouil.dev/quarto-preview-colour/preview-colour-revealjs.html)
+- [Beamer/PDF](https://m.canouil.dev/quarto-preview-colour/preview-colour-beamer.pdf)
+- [Word/Docx](https://m.canouil.dev/quarto-preview-colour/preview-colour-docx.docx)
+- [PowerPoint/Pptx](https://m.canouil.dev/quarto-preview-colour/preview-colour-pptx.pptx)
