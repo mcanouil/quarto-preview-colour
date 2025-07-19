@@ -22,6 +22,7 @@
 # SOFTWARE.
 ]]
 
+--- Pandoc utility function for stringifying elements
 --- @type function
 local stringify = pandoc.utils.stringify
 
@@ -29,10 +30,15 @@ local stringify = pandoc.utils.stringify
 --- @type boolean
 local deprecation_warning_shown = false
 
+--- Check if a string is empty or nil.
+--- @param s string|nil The string to check
+--- @return boolean True if the string is nil or empty, false otherwise
 local function is_empty(s)
   return s == nil or s == ''
 end
 
+--- Default configuration for preview colour features
+--- @type table<string, boolean>
 local preview_colour_meta = {
   ["text"] = false,
   ["code"] = true
@@ -87,6 +93,9 @@ local function get_preview_colour_option(key, meta)
   return true  -- fallback for any other keys
 end
 
+--- Convert RGB colour notation to HTML hex format.
+--- @param rgb string RGB colour string in format "rgb(r, g, b)"
+--- @return string HTML hex colour code in uppercase format (e.g., "#FF0000")
 function RGBtoHTML(rgb)
   local r, g, b = rgb:match("rgb%((%d+)%s*,%s*(%d+)%s*,%s*(%d+)%)")
   r = tonumber(r)
@@ -95,6 +104,9 @@ function RGBtoHTML(rgb)
   return string.upper(string.format("#%02x%02x%02x", r, g, b))
 end
 
+--- Convert RGB percentage notation to HTML hex format.
+--- @param rgb string RGB colour string in format "rgb(r%, g%, b%)"
+--- @return string HTML hex colour code in uppercase format (e.g., "#FF0000")
 function RGBPercentToHTML(rgb)
   local r, g, b = rgb:match("rgb%((%d+)%s*%%%s*,%s*(%d+)%s*%%%s*,%s*(%d+)%s*%%%s*%)")
   r = math.floor(tonumber(r) * 255 / 100 + 0.5)
@@ -103,12 +115,20 @@ function RGBPercentToHTML(rgb)
   return string.upper(string.format("#%02x%02x%02x", r, g, b))
 end
 
+--- Convert HSL colour notation to HTML hex format.
+--- @param hsl string HSL colour string in format "hsl(h, s%, l%)"
+--- @return string HTML hex colour code in uppercase format (e.g., "#FF0000")
 function HSLtoHTML(hsl)
   local h, s, l = hsl:match("hsl%((%d+)%s*,%s*(%d+)%%%s*,%s*(%d+)%%%s*%)")
   h = tonumber(h) / 360
   s = tonumber(s) / 100
   l = tonumber(l) / 100
   
+  --- Helper function to convert hue to RGB component.
+  --- @param p number
+  --- @param q number
+  --- @param t number
+  --- @return number RGB component value
   local function hue_to_rgb(p, q, t)
     if t < 0 then t = t + 1 end
     if t > 1 then t = t - 1 end
@@ -136,6 +156,9 @@ function HSLtoHTML(hsl)
   return string.upper(string.format("#%02x%02x%02x", r, g, b))
 end
 
+--- Convert HWB colour notation to HTML hex format.
+--- @param hwb string HWB colour string in format "hwb(h w% b%)"
+--- @return string HTML hex colour code in uppercase format (e.g., "#FF0000")
 function HWBtoHTML(hwb)
   local h, w, b = hwb:match("hwb%((%d+)%s+(%d+)%%%s+(%d+)%%%s*%)")
   h = tonumber(h)
@@ -152,6 +175,11 @@ function HWBtoHTML(hwb)
   -- Convert HWB to RGB
   -- First convert hue to RGB (assuming full saturation and 50% lightness)
   h = h / 360
+  --- Helper function to convert hue to RGB component for HWB.
+  --- @param p number
+  --- @param q number
+  --- @param t number
+  --- @return number RGB component value
   local function hue_to_rgb(p, q, t)
     if t < 0 then t = t + 1 end
     if t > 1 then t = t - 1 end
@@ -180,6 +208,9 @@ function HWBtoHTML(hwb)
   return string.upper(string.format("#%02x%02x%02x", r, g, b_color))
 end
 
+--- Escape special LaTeX characters in text.
+--- @param text string The text to escape
+--- @return string The escaped text safe for LaTeX
 function escape_latex(text)
   -- Escape special LaTeX characters
   -- Note: Order matters - backslash must be escaped first
@@ -196,6 +227,9 @@ function escape_latex(text)
   return text
 end
 
+--- Escape special Lua pattern characters for use in string.gsub.
+--- @param text string The text containing characters to escape
+--- @return string The escaped text safe for Lua patterns
 function escape_lua_pattern(text)
   -- Escape special Lua pattern characters for use in string.gsub
   text = string.gsub(text, "%%", "%%%%")  -- % must be escaped first
@@ -213,14 +247,20 @@ function escape_lua_pattern(text)
   return text
 end
 
+--- Expand 3-character hex colour to 6-character format.
+--- @param hex string Hex colour code (either #123 or #123456 format)
+--- @return string 6-character hex colour code (e.g., #123 becomes #112233)
 function expand_hex_colour(hex)
   -- Convert 3-character hex to 6-character hex (e.g., #123 -> #112233)
   if string.len(hex) == 4 then  -- #123 format
-    return string.gsub(hex, "#(%x)(%x)(%x)", "#%1%1%2%2%3%3")
+    return (string.gsub(hex, "#(%x)(%x)(%x)", "#%1%1%2%2%3%3"))
   end
   return hex  -- Already 6-character or other format
 end
 
+--- Extract and configure colour preview settings from document metadata.
+--- @param meta table<string, any> Document metadata table
+--- @return table<string, any> Updated metadata table with preview-colour configuration
 function get_colour_preview_meta(meta)
   local preview_colour_text = get_preview_colour_option('text', meta)
   local preview_colour_code = get_preview_colour_option('code', meta)
@@ -233,7 +273,14 @@ function get_colour_preview_meta(meta)
   return meta
 end
 
+--- Extract colour information from a pandoc element.
+--- @param element table Pandoc element containing text to analyse
+--- @return string|nil hex Extracted hex colour code or nil if no colour found
+--- @return string|nil original_colour_text Original colour text that was matched
 function get_colour(element)
+  --- Generate hex colour pattern for matching.
+  --- @param n number Number of hex characters to match
+  --- @return string Lua pattern for matching hex colours
   function get_hex_color(n)
     return '#' .. string.rep('[0-9a-fA-F]', n)
   end
@@ -280,6 +327,10 @@ function get_colour(element)
   return hex, original_colour_text
 end
 
+--- Process string elements to add colour previews in text.
+--- @param element table Pandoc Str element
+--- @param meta table<string, any> Document metadata (currently unused)
+--- @return table|nil Modified pandoc element with colour preview, or original element
 function process_str(element, meta)
   if preview_colour_meta['text'] == false then
     return element
@@ -288,10 +339,10 @@ function process_str(element, meta)
     local hex, original_colour_text = get_colour(element)
     if hex ~= nil and original_colour_text ~= nil then
       if quarto.doc.is_format("html:js") then
-        colour_preview_mark = "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
+        local colour_preview_mark = "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
         local escaped_pattern = escape_lua_pattern(original_colour_text)
         local escaped_replacement = string.gsub(original_colour_text, "%%", "%%%%") .. colour_preview_mark
-        new_text = string.gsub(
+        local new_text = string.gsub(
           element.text,
           escaped_pattern,
           escaped_replacement
@@ -299,11 +350,11 @@ function process_str(element, meta)
         return pandoc.RawInline('html', new_text)
       elseif quarto.doc.is_format("latex") then
         local hex_colour_six = expand_hex_colour(hex)
-        colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
+        local colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
         local escaped_original = escape_latex(original_colour_text)
         local escaped_pattern = escape_lua_pattern(original_colour_text)
         local escaped_replacement = string.gsub(escaped_original, "%%", "%%%%") .. colour_preview_mark
-        new_text = string.gsub(
+        local new_text = string.gsub(
           element.text,
           escaped_pattern,
           escaped_replacement
@@ -314,6 +365,9 @@ function process_str(element, meta)
   end
 end
 
+--- Process code elements to add colour previews.
+--- @param element table Pandoc Code element
+--- @return table|nil Modified pandoc element with colour preview, or original element
 function process_code(element)
   if preview_colour_meta['code'] == false then
     return element
@@ -322,17 +376,20 @@ function process_code(element)
     local hex, original_colour_text = get_colour(element)
     if hex ~= nil and original_colour_text ~= nil then
       if quarto.doc.is_format("html:js") then
-        colour_preview_mark = "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
+        local colour_preview_mark = "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
         return pandoc.Span({element, pandoc.RawInline('html', colour_preview_mark)})
       elseif quarto.doc.is_format("latex") then
         local hex_colour_six = expand_hex_colour(hex)
-        colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
+        local colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
         return pandoc.Span({element, pandoc.RawInline('latex', colour_preview_mark)})
       end
     end
   end
 end
 
+--- Pandoc filter configuration
+--- Defines the processing pipeline for different pandoc elements
+--- @type table<number, table<string, function>>
 return {
   {Meta = get_colour_preview_meta},
   {Str = process_str},
