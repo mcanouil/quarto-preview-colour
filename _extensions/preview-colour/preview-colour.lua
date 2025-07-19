@@ -71,26 +71,26 @@ end
 --- @return boolean The option value as a boolean
 local function get_preview_colour_option(key, meta)
   -- Check new nested structure: extensions.preview-colour.key
-  if not is_empty(meta['extensions']) and 
-     not is_empty(meta['extensions']['preview-colour']) and 
-     not is_empty(meta['extensions']['preview-colour'][key]) then
+  if not is_empty(meta['extensions']) and
+      not is_empty(meta['extensions']['preview-colour']) and
+      not is_empty(meta['extensions']['preview-colour'][key]) then
     return meta['extensions']['preview-colour'][key]
   end
-  
+
   -- Check deprecated top-level structure: preview-colour.key (with warning)
   local deprecated_value = check_deprecated_config(meta, key)
   if deprecated_value ~= nil then
     return deprecated_value
   end
-  
+
   -- Return default values: code: true, text: false
   if key == 'code' then
     return true
   elseif key == 'text' then
     return false
   end
-  
-  return true  -- fallback for any other keys
+
+  return true -- fallback for any other keys
 end
 
 --- Convert RGB colour notation to HTML hex format.
@@ -123,7 +123,7 @@ function HSLtoHTML(hsl)
   h = tonumber(h) / 360
   s = tonumber(s) / 100
   l = tonumber(l) / 100
-  
+
   --- Helper function to convert hue to RGB component.
   --- @param p number
   --- @param q number
@@ -132,27 +132,27 @@ function HSLtoHTML(hsl)
   local function hue_to_rgb(p, q, t)
     if t < 0 then t = t + 1 end
     if t > 1 then t = t - 1 end
-    if t < 1/6 then return p + (q - p) * 6 * t end
-    if t < 1/2 then return q end
-    if t < 2/3 then return p + (q - p) * (2/3 - t) * 6 end
+    if t < 1 / 6 then return p + (q - p) * 6 * t end
+    if t < 1 / 2 then return q end
+    if t < 2 / 3 then return p + (q - p) * (2 / 3 - t) * 6 end
     return p
   end
-  
+
   local r, g, b
   if s == 0 then
     r, g, b = l, l, l -- achromatic
   else
     local q = l < 0.5 and l * (1 + s) or l + s - l * s
     local p = 2 * l - q
-    r = hue_to_rgb(p, q, h + 1/3)
+    r = hue_to_rgb(p, q, h + 1 / 3)
     g = hue_to_rgb(p, q, h)
-    b = hue_to_rgb(p, q, h - 1/3)
+    b = hue_to_rgb(p, q, h - 1 / 3)
   end
-  
+
   r = math.floor(r * 255 + 0.5)
   g = math.floor(g * 255 + 0.5)
   b = math.floor(b * 255 + 0.5)
-  
+
   return string.upper(string.format("#%02x%02x%02x", r, g, b))
 end
 
@@ -164,14 +164,14 @@ function HWBtoHTML(hwb)
   h = tonumber(h)
   w = tonumber(w) / 100
   b = tonumber(b) / 100
-  
+
   -- Normalize whiteness and blackness
   local sum = w + b
   if sum > 1 then
     w = w / sum
     b = b / sum
   end
-  
+
   -- Convert HWB to RGB
   -- First convert hue to RGB (assuming full saturation and 50% lightness)
   h = h / 360
@@ -183,28 +183,28 @@ function HWBtoHTML(hwb)
   local function hue_to_rgb(p, q, t)
     if t < 0 then t = t + 1 end
     if t > 1 then t = t - 1 end
-    if t < 1/6 then return p + (q - p) * 6 * t end
-    if t < 1/2 then return q end
-    if t < 2/3 then return p + (q - p) * (2/3 - t) * 6 end
+    if t < 1 / 6 then return p + (q - p) * 6 * t end
+    if t < 1 / 2 then return q end
+    if t < 2 / 3 then return p + (q - p) * (2 / 3 - t) * 6 end
     return p
   end
-  
+
   local r, g, b_color
   local q = 1
   local p = 0
-  r = hue_to_rgb(p, q, h + 1/3)
+  r = hue_to_rgb(p, q, h + 1 / 3)
   g = hue_to_rgb(p, q, h)
-  b_color = hue_to_rgb(p, q, h - 1/3)
-  
+  b_color = hue_to_rgb(p, q, h - 1 / 3)
+
   -- Apply whiteness and blackness
   r = r * (1 - w - b) + w
   g = g * (1 - w - b) + w
   b_color = b_color * (1 - w - b) + w
-  
+
   r = math.floor(r * 255 + 0.5)
   g = math.floor(g * 255 + 0.5)
   b_color = math.floor(b_color * 255 + 0.5)
-  
+
   return string.upper(string.format("#%02x%02x%02x", r, g, b_color))
 end
 
@@ -219,7 +219,7 @@ function escape_latex(text)
   text = string.gsub(text, "%}", "\\}")
   text = string.gsub(text, "%$", "\\$")
   text = string.gsub(text, "%&", "\\&")
-  text = string.gsub(text, "%%", "\\%%")  -- Escape % in replacement string
+  text = string.gsub(text, "%%", "\\%%") -- Escape % in replacement string
   text = string.gsub(text, "%#", "\\#")
   text = string.gsub(text, "%^", "\\textasciicircum{}")
   text = string.gsub(text, "%_", "\\_")
@@ -241,7 +241,7 @@ end
 --- @return string The escaped text safe for Lua patterns
 function escape_lua_pattern(text)
   -- Escape special Lua pattern characters for use in string.gsub
-  text = string.gsub(text, "%%", "%%%%")  -- % must be escaped first
+  text = string.gsub(text, "%%", "%%%%") -- % must be escaped first
   text = string.gsub(text, "%^", "%%^")
   text = string.gsub(text, "%$", "%%$")
   text = string.gsub(text, "%(", "%%(")
@@ -261,10 +261,10 @@ end
 --- @return string 6-character hex colour code (e.g., #123 becomes #112233)
 function expand_hex_colour(hex)
   -- Convert 3-character hex to 6-character hex (e.g., #123 -> #112233)
-  if string.len(hex) == 4 then  -- #123 format
+  if string.len(hex) == 4 then -- #123 format
     return (string.gsub(hex, "#(%x)(%x)(%x)", "#%1%1%2%2%3%3"))
   end
-  return hex  -- Already 6-character or other format
+  return hex -- Already 6-character or other format
 end
 
 --- Extract and configure colour preview settings from document metadata.
@@ -273,7 +273,7 @@ end
 function get_colour_preview_meta(meta)
   local preview_colour_text = get_preview_colour_option('text', meta)
   local preview_colour_code = get_preview_colour_option('code', meta)
-  
+
   meta['extensions']['preview-colour'] = {
     ["text"] = preview_colour_text,
     ["code"] = preview_colour_code
@@ -296,7 +296,7 @@ function get_colour(element)
 
   local hex = nil
   local original_colour_text = nil
-  
+
   for i = 6, 3, -1 do
     hex = element.text:match('(' .. get_hex_color(i) .. ')')
     if (i == 5 or i == 4) and hex ~= nil then
@@ -340,7 +340,17 @@ end
 --- @param hex string Hex colour code
 --- @return string HTML colour preview mark
 local function create_html_colour_mark(hex)
-  return "<span style=\"display: inline-block; color: " .. hex .. ";\" title=\"Colour preview: " .. hex .. "\" aria-label=\"Colour preview: " .. hex .. "\">&#9673;</span>"
+  return '<span style="display: inline-block; color: ' ..
+  hex ..
+  '; cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; position: relative;" title="Colour preview: ' ..
+  hex ..
+  ' (click to copy)" aria-label="Colour preview: ' ..
+  hex ..
+  ' (click to copy)" onclick="navigator.clipboard.writeText(\'' ..
+  hex ..
+  '\').then(() => { const span = this; const originalTitle = span.title; span.title = \'Copied: ' ..
+  hex ..
+  '\'; let tooltip = document.createElement(\'div\'); tooltip.textContent = \'Copied!\'; tooltip.style.cssText = \'position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:4px 8px;border-radius:4px;font-size:12px;font-family:sans-serif;white-space:nowrap;z-index:9999;box-shadow:0 2px 4px rgba(0,0,0,0.3);pointer-events:none;\'; span.appendChild(tooltip); setTimeout(() => { span.title = originalTitle; if (span.contains(tooltip)) span.removeChild(tooltip); }, 1500); }).catch(() => console.error(\'Failed to copy colour code\'));">&#9673;</span>'
 end
 
 --- Create colour preview mark for LaTeX format.
@@ -356,7 +366,7 @@ end
 --- @return string Typst colour preview mark
 local function create_typst_colour_mark(hex)
   local hex_colour_six = expand_hex_colour(hex)
-  return "#text(fill: rgb(\"" .. string.lower(hex_colour_six) .. "\"))[◉]"
+  return '#text(fill: rgb("' .. string.lower(hex_colour_six) .. '"))[◉]'
 end
 
 --- Get format-specific colour preview mark.
@@ -388,11 +398,12 @@ local function process_text_replacement(element, hex, original_colour_text, form
   elseif format == "typst" then
     escaped_original = escape_typst(original_colour_text)
   end
-  
+
   local escaped_pattern = escape_lua_pattern(original_colour_text)
-  local escaped_replacement = string.gsub(escaped_original, "%%", "%%%%") .. colour_mark
+  local escaped_colour_mark = string.gsub(colour_mark, "%%", "%%%%")
+  local escaped_replacement = string.gsub(escaped_original, "%%", "%%%%") .. escaped_colour_mark
   local new_text = string.gsub(element.text, escaped_pattern, escaped_replacement)
-  
+
   return pandoc.RawInline(format, new_text)
 end
 
@@ -402,7 +413,7 @@ end
 --- @param colour_mark string Colour preview mark for the format
 --- @return table Modified pandoc element
 local function process_code_element(element, format, colour_mark)
-  return pandoc.Span({element, pandoc.RawInline(format, colour_mark)})
+  return pandoc.Span({ element, pandoc.RawInline(format, colour_mark) })
 end
 
 --- Process string elements to add colour previews in text.
@@ -413,7 +424,7 @@ function process_str(element, meta)
   if preview_colour_meta['text'] == false then
     return element
   end
-  
+
   local hex, original_colour_text = get_colour(element)
   if hex ~= nil and original_colour_text ~= nil then
     local format, colour_mark = get_colour_mark_for_format(hex)
@@ -430,7 +441,7 @@ function process_code(element)
   if preview_colour_meta['code'] == false then
     return element
   end
-  
+
   local hex, original_colour_text = get_colour(element)
   if hex ~= nil and original_colour_text ~= nil then
     local format, colour_mark = get_colour_mark_for_format(hex)
@@ -444,7 +455,7 @@ end
 --- Defines the processing pipeline for different pandoc elements
 --- @type table<number, table<string, function>>
 return {
-  {Meta = get_colour_preview_meta},
-  {Str = process_str},
-  {Code = process_code}
+  { Meta = get_colour_preview_meta },
+  { Str = process_str },
+  { Code = process_code }
 }

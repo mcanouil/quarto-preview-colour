@@ -42,32 +42,42 @@ extensions:
 
 ## Supported Colour Formats
 
-- [ ] Names one: `orange` (*will probably never be supported*)
-- [x] hex codes:
-  - [x] **code**: `#441100`
-  - [x] **text**: #441100
-- [x] short hex codes:
-  - [x] **code**: `#F03`
-  - [x] **text**: #F03
-- [ ] rgb:
-  - [x] **code**: `rgb(10, 100, 200)`
-  - [x] **code** (no space): `rgb(10,100,200)`
-  - [ ] **text**: rgb(10, 100, 200)
-  - [x] **text** (no space): rgb(10,100,200)
-- [ ] rgb with %:
-  - [x] **code**: `rgb(100%, 20%, 100%)`
-  - [x] **code** (no space): `rgb(100%,20%,100%)`
-  - [ ] **text**: rgb(100%, 20%, 100%)
-  - [x] **text** (no space): rgb(100%,20%,100%)
-- [ ] hwb:
-  - [x] **code**: `hwb(135 0% 40%)`
-  - [ ] **text**: hwb(135 0% 40%)
-- [ ] hsl:
-  - [x] **code**: `hsl(240, 100%, 50%)`
-  - [x] **code** (no space): `hsl(240,100%,50%)`
-  - [ ] **text**: hsl(240, 100%, 50%)
-  - [x] **text** (no space): hsl(240,100%,50%)
+- ❌ Names one: `orange` (*will probably never be supported*)
+- ✅ hex codes:
+  - ✅ **code**: `#441100`
+  - ✅ **text**: #441100
+- ✅ short hex codes:
+  - ✅ **code**: `#F03`
+  - ✅ **text**: #F03
+- 🔶 rgb:
+  - ✅ **code**: `rgb(10, 100, 200)`
+  - ✅ **code** (no space): `rgb(10,100,200)`
+  - ❌ **text**: rgb(10, 100, 200)
+  - ✅ **text** (no space): rgb(10,100,200)
+- 🔶 rgb with %:
+  - ✅ **code**: `rgb(100%, 20%, 100%)`
+  - ✅ **code** (no space): `rgb(100%,20%,100%)`
+  - ❌ **text**: rgb(100%, 20%, 100%)
+  - ✅ **text** (no space): rgb(100%,20%,100%)
+- 🔶 hwb:
+  - ✅ **code**: `hwb(135 0% 40%)`
+  - ❌ **text**: hwb(135 0% 40%)
+- 🔶 hsl:
+  - ✅ **code**: `hsl(240, 100%, 50%)`
+  - ✅ **code** (no space): `hsl(240,100%,50%)`
+  - ❌ **text**: hsl(240, 100%, 50%)
+  - ✅ **text** (no space): hsl(240,100%,50%)
 
-## Example
+## Examples
 
-Here is the source code for a minimal example: [example.qmd](example.qmd).
+Here is the source code for a minimal example: [`example.qmd`](example.qmd).
+
+Outputs of `example.qmd`:
+
+- [HTML](https://m.canouil.dev/quarto-preview-colour-text/)
+- [Typst/PDF](https://m.canouil.dev/quarto-preview-colour-text/preview-colour-typst.pdf)
+- [LaTeX/PDF (XeLaTeX)](https://m.canouil.dev/quarto-preview-colour-text/preview-colour-xelatex.pdf)
+- [LaTeX/PDF (LuaLaTeX)](https://m.canouil.dev/quarto-preview-colour-text/preview-colour-lualatex.pdf)
+- [LaTeX/PDF (PDFLaTeX)](https://m.canouil.dev/quarto-preview-colour-text/preview-colour-pdflatex.pdf)
+- [Reveal.js](https://m.canouil.dev/quarto-preview-colour-text/preview-colour-revealjs.html)
+- [Beamer/PDF](https://m.canouil.dev/quarto-preview-colour-text/preview-colour-beamer.pdf)
