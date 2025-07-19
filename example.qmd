@@ -84,12 +84,12 @@ But it does not work with rgb(10,100,200) and hsl(240,100%,50%).
   - [x] code: `rgb(10, 100, 200)`
   - [x] code (no space): `rgb(10,100,200)`
   - [ ] text: rgb(10, 100, 200)
-  - [ ] text (no space): rgb(10,100,200)
+  - [x] text (no space): rgb(10,100,200)
 - [ ] rgb with %:
   - [x] code: `rgb(100%, 20%, 100%)`
   - [x] code (no space): `rgb(100%,20%,100%)`
   - [ ] text: rgb(100%, 20%, 100%)
-  - [ ] text (no space): rgb(100%,20%,100%)
+  - [x] text (no space): rgb(100%,20%,100%)
 - [ ] hwb:
   - [x] code: `hwb(135 0% 40%)`
   - [ ] text: hwb(135 0% 40%)
@@ -97,4 +97,4 @@ But it does not work with rgb(10,100,200) and hsl(240,100%,50%).
   - [x] code: `hsl(240, 100%, 50%)`
   - [x] code (no space): `hsl(240,100%,50%)`
   - [ ] text: hsl(240, 100%, 50%)
-  - [ ] text (no space): hsl(240,100%,50%)
+  - [x] text (no space): hsl(240,100%,50%)
