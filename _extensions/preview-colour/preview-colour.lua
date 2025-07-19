@@ -40,7 +40,7 @@ function RGBtoHTML(rgb)
 end
 
 function RGBPercentToHTML(rgb)
-  local r, g, b = rgb:match("rgb%((%d+)%%%s*,%s*(%d+)%%%s*,%s*(%d+)%%%s*%)")
+  local r, g, b = rgb:match("rgb%((%d+)%s*%%%s*,%s*(%d+)%s*%%%s*,%s*(%d+)%s*%%%s*%)")
   r = math.floor(tonumber(r) * 255 / 100 + 0.5)
   g = math.floor(tonumber(g) * 255 / 100 + 0.5)
   b = math.floor(tonumber(b) * 255 / 100 + 0.5)
@@ -140,6 +140,23 @@ function escape_latex(text)
   return text
 end
 
+function escape_lua_pattern(text)
+  -- Escape special Lua pattern characters for use in string.gsub
+  text = string.gsub(text, "%%", "%%%%")  -- % must be escaped first
+  text = string.gsub(text, "%^", "%%^")
+  text = string.gsub(text, "%$", "%%$")
+  text = string.gsub(text, "%(", "%%(")
+  text = string.gsub(text, "%)", "%%)")
+  text = string.gsub(text, "%.", "%%.")
+  text = string.gsub(text, "%[", "%%[")
+  text = string.gsub(text, "%]", "%%]")
+  text = string.gsub(text, "%*", "%%*")
+  text = string.gsub(text, "%+", "%%+")
+  text = string.gsub(text, "%-", "%%-")
+  text = string.gsub(text, "%?", "%%?")
+  return text
+end
+
 function expand_hex_colour(hex)
   -- Convert 3-character hex to 6-character hex (e.g., #123 -> #112233)
   if string.len(hex) == 4 then  -- #123 format
@@ -193,7 +210,7 @@ function get_colour(element)
     end
   end
   if hex == nil then
-    original_colour_text = element.text:match('(rgb%s*%(%s*%d+%%%s*,%s*%d+%%%s*,%s*%d+%%%s*%))')
+    original_colour_text = element.text:match('(rgb%s*%(%s*%d+%s*%%%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*%))')
     if original_colour_text ~= nil then
       hex = RGBPercentToHTML(original_colour_text)
     end
@@ -223,20 +240,24 @@ function process_str(element, meta)
     if hex ~= nil and original_colour_text ~= nil then
       if quarto.doc.is_format("html:js") then
         colour_preview_mark = "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
+        local escaped_pattern = escape_lua_pattern(original_colour_text)
+        local escaped_replacement = string.gsub(original_colour_text, "%%", "%%%%") .. colour_preview_mark
         new_text = string.gsub(
           element.text,
-          original_colour_text,
-          original_colour_text .. colour_preview_mark
+          escaped_pattern,
+          escaped_replacement
         )
         return pandoc.RawInline('html', new_text)
       elseif quarto.doc.is_format("latex") then
         local hex_colour_six = expand_hex_colour(hex)
         colour_preview_mark = "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
         local escaped_original = escape_latex(original_colour_text)
+        local escaped_pattern = escape_lua_pattern(original_colour_text)
+        local escaped_replacement = string.gsub(escaped_original, "%%", "%%%%") .. colour_preview_mark
         new_text = string.gsub(
           element.text,
-          original_colour_text,
-          escaped_original .. colour_preview_mark
+          escaped_pattern,
+          escaped_replacement
         )
         return pandoc.RawInline('latex', new_text)
       end
