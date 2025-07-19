@@ -340,7 +340,7 @@ end
 --- @param hex string Hex colour code
 --- @return string HTML colour preview mark
 local function create_html_colour_mark(hex)
-  return "<span style=\"display: inline-block; color: " .. hex .. ";\">&#9673;</span>"
+  return "<span style=\"display: inline-block; color: " .. hex .. ";\" title=\"Colour preview: " .. hex .. "\" aria-label=\"Colour preview: " .. hex .. "\">&#9673;</span>"
 end
 
 --- Create colour preview mark for LaTeX format.
