@@ -91,7 +91,7 @@ But it does not work with rgb(10,100,200) and hsl(240,100%,50%).
   - [ ] text: rgb(100%, 20%, 100%)
   - [ ] text (no space): rgb(100%,20%,100%)
 - [ ] hwb:
-  - [ ] code: `hwb(135 0% 40%)`
+  - [x] code: `hwb(135 0% 40%)`
   - [ ] text: hwb(135 0% 40%)
 - [ ] hsl:
   - [x] code: `hsl(240, 100%, 50%)`

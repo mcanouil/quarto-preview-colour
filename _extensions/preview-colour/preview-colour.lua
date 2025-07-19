@@ -80,6 +80,50 @@ function HSLtoHTML(hsl)
   return string.upper(string.format("#%02x%02x%02x", r, g, b))
 end
 
+function HWBtoHTML(hwb)
+  local h, w, b = hwb:match("hwb%((%d+)%s+(%d+)%%%s+(%d+)%%%s*%)")
+  h = tonumber(h)
+  w = tonumber(w) / 100
+  b = tonumber(b) / 100
+  
+  -- Normalize whiteness and blackness
+  local sum = w + b
+  if sum > 1 then
+    w = w / sum
+    b = b / sum
+  end
+  
+  -- Convert HWB to RGB
+  -- First convert hue to RGB (assuming full saturation and 50% lightness)
+  h = h / 360
+  local function hue_to_rgb(p, q, t)
+    if t < 0 then t = t + 1 end
+    if t > 1 then t = t - 1 end
+    if t < 1/6 then return p + (q - p) * 6 * t end
+    if t < 1/2 then return q end
+    if t < 2/3 then return p + (q - p) * (2/3 - t) * 6 end
+    return p
+  end
+  
+  local r, g, b_color
+  local q = 1
+  local p = 0
+  r = hue_to_rgb(p, q, h + 1/3)
+  g = hue_to_rgb(p, q, h)
+  b_color = hue_to_rgb(p, q, h - 1/3)
+  
+  -- Apply whiteness and blackness
+  r = r * (1 - w - b) + w
+  g = g * (1 - w - b) + w
+  b_color = b_color * (1 - w - b) + w
+  
+  r = math.floor(r * 255 + 0.5)
+  g = math.floor(g * 255 + 0.5)
+  b_color = math.floor(b_color * 255 + 0.5)
+  
+  return string.upper(string.format("#%02x%02x%02x", r, g, b_color))
+end
+
 function escape_latex(text)
   -- Escape special LaTeX characters
   -- Note: Order matters - backslash must be escaped first
@@ -158,6 +202,12 @@ function get_colour(element)
     original_colour_text = element.text:match('(hsl%s*%(%s*%d+%s*,%s*%d+%s*%%,%s*%d+%s*%%s*%))')
     if original_colour_text ~= nil then
       hex = HSLtoHTML(original_colour_text)
+    end
+  end
+  if hex == nil then
+    original_colour_text = element.text:match('(hwb%s*%(%s*%d+%s+%d+%%%s+%d+%%%s*%))')
+    if original_colour_text ~= nil then
+      hex = HWBtoHTML(original_colour_text)
     end
   end
 
