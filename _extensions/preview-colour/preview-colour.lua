@@ -369,9 +369,27 @@ local function create_typst_colour_mark(hex)
   return '#text(fill: rgb("' .. string.lower(hex_colour_six) .. '"))[◉]'
 end
 
+--- Create colour preview mark for DOCX format.
+--- @param hex string Hex colour code
+--- @return string DOCX colour preview mark using OpenXML
+local function create_docx_colour_mark(hex)
+  local hex_colour_six = expand_hex_colour(hex)
+  local hex_without_hash = string.gsub(hex_colour_six, '#', '')
+  return '<w:r><w:rPr><w:color w:val="' .. hex_without_hash .. '"/></w:rPr><w:t>●</w:t></w:r>'
+end
+
+--- Create colour preview mark for PPTX format.
+--- @param hex string Hex colour code
+--- @return string PPTX colour preview mark using OpenXML
+local function create_pptx_colour_mark(hex)
+  local hex_colour_six = expand_hex_colour(hex)
+  local hex_without_hash = string.gsub(hex_colour_six, '#', '')
+  return '<a:r><a:rPr dirty="0"><a:solidFill><a:srgbClr val="' .. hex_without_hash .. '" /></a:solidFill></a:rPr><a:t>●</a:t></a:r>'
+end
+
 --- Get format-specific colour preview mark.
 --- @param hex string Hex colour code
---- @return string|nil format Format name (html, latex, typst) or nil if unsupported
+--- @return string|nil format Format name (html, latex, typst, openxml) or nil if unsupported
 --- @return string|nil mark Colour preview mark for the format or nil if unsupported
 local function get_colour_mark_for_format(hex)
   if quarto.doc.is_format("html:js") then
@@ -380,6 +398,10 @@ local function get_colour_mark_for_format(hex)
     return "latex", create_latex_colour_mark(hex)
   elseif quarto.doc.is_format("typst") then
     return "typst", create_typst_colour_mark(hex)
+  elseif quarto.doc.is_format("docx") then
+    return "openxml", create_docx_colour_mark(hex)
+  elseif quarto.doc.is_format("pptx") then
+    return "openxml", create_pptx_colour_mark(hex)
   end
   return nil, nil
 end
@@ -392,6 +414,18 @@ end
 --- @param colour_mark string Colour preview mark for the format
 --- @return table|nil Modified pandoc element or nil
 local function process_text_replacement(element, hex, original_colour_text, format, colour_mark)
+  -- For OpenXML formats (DOCX/PPTX), we need to return a Span with separate elements
+  if format == "openxml" then
+    local escaped_pattern = escape_lua_pattern(original_colour_text)
+    local escaped_replacement = string.gsub(original_colour_text, "%%", "%%%%")
+    local new_text = string.gsub(element.text, escaped_pattern, escaped_replacement)
+    return pandoc.Span({ 
+      pandoc.Str(new_text), 
+      pandoc.RawInline(format, colour_mark) 
+    })
+  end
+
+  -- For other formats (LaTeX, Typst), use the existing concatenation approach
   local escaped_original = original_colour_text
   if format == "latex" then
     escaped_original = escape_latex(original_colour_text)
