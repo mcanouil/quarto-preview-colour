@@ -1,6 +1,7 @@
 # Preview Colour Extension For Quarto
 
-`preview-colour` is a [Quarto](https://quarto.org) extension that automatically renders colour previews for inline colour codes in both code blocks and regular text. It supports multiple colour formats including hex, RGB, HSL, and HWB values.
+`preview-colour` is a [Quarto](https://quarto.org) extension that automatically renders colour previews for inline colour codes in both code blocks and regular text.
+It supports multiple colour formats including hex, RGB, HSL, and HWB values.
 
 ## Installation
 
