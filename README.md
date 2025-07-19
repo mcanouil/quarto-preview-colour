@@ -81,3 +81,5 @@ Outputs of `example.qmd`:
 - [LaTeX/PDF (PDFLaTeX)](https://m.canouil.dev/quarto-preview-colour-text/preview-colour-pdflatex.pdf)
 - [Reveal.js](https://m.canouil.dev/quarto-preview-colour-text/preview-colour-revealjs.html)
 - [Beamer/PDF](https://m.canouil.dev/quarto-preview-colour-text/preview-colour-beamer.pdf)
+- [Word/Docx](https://m.canouil.dev/quarto-highlight-text/highlight-openxml.docx)
+- [PowerPoint/Pptx](https://m.canouil.dev/quarto-highlight-text/highlight-pptx.pptx)
