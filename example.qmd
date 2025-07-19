@@ -49,9 +49,15 @@ embed-resources: true
 engine: markdown
 filters:
   - preview-colour
-preview-colour:
-  code: true
-  text: true
+# Deprecated configuration (will show warning):
+# preview-colour:
+#   code: true
+#   text: true
+# New recommended configuration:
+extensions:
+  preview-colour:
+    code: true
+    text: true
 ---
 
 ## Usage

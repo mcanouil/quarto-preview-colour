@@ -29,9 +29,10 @@ filters:
 Configure which elements should show colour previews:
 
 ```yaml
-preview-colour:
-  code: true   # Enable previews for inline code
-  text: true   # Enable previews for regular text
+extensions:
+  preview-colour:
+    code: true   # Enable previews for inline code
+    text: false   # Enable previews for regular text
 ```
 
 ## Supported Colour Formats

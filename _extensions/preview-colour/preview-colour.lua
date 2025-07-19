@@ -22,14 +22,70 @@
 # SOFTWARE.
 ]]
 
+--- @type function
+local stringify = pandoc.utils.stringify
+
+--- Flag to track if deprecation warning has been shown
+--- @type boolean
+local deprecation_warning_shown = false
+
 local function is_empty(s)
   return s == nil or s == ''
 end
 
 local preview_colour_meta = {
-  ["text"] = true,
+  ["text"] = false,
   ["code"] = true
 }
+
+--- Check for deprecated top-level preview-colour configuration and emit warning.
+--- @param meta table<string, any> Document metadata table
+--- @param key string The configuration key being accessed
+--- @return boolean|nil The value from deprecated config, or nil if not found
+local function check_deprecated_config(meta, key)
+  if not is_empty(meta['preview-colour']) and not is_empty(meta['preview-colour'][key]) then
+    if not deprecation_warning_shown then
+      quarto.log.warning(
+        'Top-level "preview-colour" configuration is deprecated. ' ..
+        'Please use:\n' ..
+        'extensions:\n' ..
+        '  preview-colour:\n' ..
+        '    ' .. key .. ': value'
+      )
+      deprecation_warning_shown = true
+    end
+    return meta['preview-colour'][key]
+  end
+  return nil
+end
+
+--- Get preview-colour option from metadata with deprecation support.
+--- @param key string The option name to retrieve
+--- @param meta table<string, any> Document metadata table
+--- @return boolean The option value as a boolean
+local function get_preview_colour_option(key, meta)
+  -- Check new nested structure: extensions.preview-colour.key
+  if not is_empty(meta['extensions']) and 
+     not is_empty(meta['extensions']['preview-colour']) and 
+     not is_empty(meta['extensions']['preview-colour'][key]) then
+    return meta['extensions']['preview-colour'][key]
+  end
+  
+  -- Check deprecated top-level structure: preview-colour.key (with warning)
+  local deprecated_value = check_deprecated_config(meta, key)
+  if deprecated_value ~= nil then
+    return deprecated_value
+  end
+  
+  -- Return default values: code: true, text: false
+  if key == 'code' then
+    return true
+  elseif key == 'text' then
+    return false
+  end
+  
+  return true  -- fallback for any other keys
+end
 
 function RGBtoHTML(rgb)
   local r, g, b = rgb:match("rgb%((%d+)%s*,%s*(%d+)%s*,%s*(%d+)%)")
@@ -166,16 +222,9 @@ function expand_hex_colour(hex)
 end
 
 function get_colour_preview_meta(meta)
-  local preview_colour_text = true
-  local preview_colour_code = true
-  if not is_empty(meta['preview-colour']) then
-    if not is_empty(meta['preview-colour']['text']) then
-      preview_colour_text = meta['preview-colour']['text']
-    end
-    if not is_empty(meta['preview-colour']['code']) then
-      preview_colour_code = meta['preview-colour']['code']
-    end
-  end
+  local preview_colour_text = get_preview_colour_option('text', meta)
+  local preview_colour_code = get_preview_colour_option('code', meta)
+  
   meta['preview-colour'] = {
     ["text"] = preview_colour_text,
     ["code"] = preview_colour_code
