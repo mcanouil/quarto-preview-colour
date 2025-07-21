@@ -437,12 +437,11 @@ end
 
 --- Process text replacement for string elements with colour previews.
 --- @param element table Pandoc element containing text
---- @param hex string Hex colour code
 --- @param original_colour_text string Original colour text found in element
 --- @param format string Output format name
 --- @param colour_mark string Colour preview mark for the format
 --- @return table|nil Modified pandoc element or nil
-local function process_text_replacement(element, hex, original_colour_text, format, colour_mark)
+local function process_text_replacement(element, original_colour_text, format, colour_mark)
   -- For OpenXML formats (DOCX/PPTX), we need to return a Span with separate elements
   if format == "openxml" then
     local escaped_pattern = escape_lua_pattern(original_colour_text)
@@ -492,7 +491,7 @@ function process_str(element, meta)
   if hex ~= nil and original_colour_text ~= nil then
     local format, colour_mark = get_colour_mark_for_format(hex)
     if format and colour_mark then
-      return process_text_replacement(element, hex, original_colour_text, format, colour_mark)
+      return process_text_replacement(element, original_colour_text, format, colour_mark)
     end
   end
 end
