@@ -31,6 +31,16 @@ filters:
 - text: #441100 or rgb(10,100,200)
 ````
 
+> [!NOTE]
+> Colour codes should be placed in inline code blocks (alone) or regular text.
+>
+> ❌ Invalid:
+> - `` `"My colour is #441100"` ``
+> - `` `["#441100", "#114400"]` ``
+>
+> ✅ Valid:
+> - `` `#441100` ``
+
 ### Configuration Options
 
 Configure which elements should show colour previews:
