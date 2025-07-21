@@ -294,19 +294,30 @@ function get_colour(element)
     return '#' .. string.rep('[0-9a-fA-F]', n)
   end
 
+  local hex6 = element.text:match(get_hex_color(6))
+  local matches = {}
+  if hex6 then
+    for match in string.gmatch(element.text, get_hex_color(6)) do
+      table.insert(matches, {name = 'hex6', value = match})
+    end
+  else
+    local hex3 = element.text:match(get_hex_color(3))
+    if hex3 then
+      for match in string.gmatch(element.text, get_hex_color(3)) do
+        table.insert(matches, {name = 'hex3', value = match})
+      end
+    end
+  end
+  -- Now check other patterns (skip hex6/hex3)
   local patterns = {
-    {name = 'hex6', pattern = get_hex_color(6)},
-    {name = 'hex3', pattern = get_hex_color(3)},
     {name = 'rgb', pattern = 'rgb%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%)'},
     {name = 'rgb_percent', pattern = 'rgb%s*%(%s*%d+%s*%%%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*%)'},
     {name = 'hsl', pattern = 'hsl%s*%(%s*%d+%s*,%s*%d+%s*%%,%s*%d+%s*%%s*%)'},
     {name = 'hwb', pattern = 'hwb%s*%(%s*%d+%s+%d+%%%s+%d+%%%s*%)'}
   }
-
-  local matches = {}
   for _, pat in ipairs(patterns) do
     for match in string.gmatch(element.text, pat.pattern) do
-      table.insert(matches, {type = pat.name, value = match})
+      table.insert(matches, {name = pat.name, value = match})
     end
   end
 
@@ -321,23 +332,23 @@ function get_colour(element)
   end
 
   for _, match in ipairs(matches) do
-    if match.type == 'hex6' or match.type == 'hex3' then
+    if match.name == 'hex6' or match.name == 'hex3' then
       hex = match.value
       original_colour_text = match.value
       break
-    elseif match.type == 'rgb' then
+    elseif match.name == 'rgb' then
       hex = RGBtoHTML(match.value)
       original_colour_text = match.value
       break
-    elseif match.type == 'rgb_percent' then
+    elseif match.name == 'rgb_percent' then
       hex = RGBPercentToHTML(match.value)
       original_colour_text = match.value
       break
-    elseif match.type == 'hsl' then
+    elseif match.name == 'hsl' then
       hex = HSLtoHTML(match.value)
       original_colour_text = match.value
       break
-    elseif match.type == 'hwb' then
+    elseif match.name == 'hwb' then
       hex = HWBtoHTML(match.value)
       original_colour_text = match.value
       break
