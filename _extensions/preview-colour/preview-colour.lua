@@ -294,42 +294,64 @@ function get_colour(element)
     return '#' .. string.rep('[0-9a-fA-F]', n)
   end
 
+  local hex6 = element.text:match(get_hex_color(6))
+  local matches = {}
+  if hex6 then
+    for match in string.gmatch(element.text, get_hex_color(6)) do
+      table.insert(matches, {name = 'hex6', value = match})
+    end
+  else
+    local hex3 = element.text:match(get_hex_color(3))
+    if hex3 then
+      for match in string.gmatch(element.text, get_hex_color(3)) do
+        table.insert(matches, {name = 'hex3', value = match})
+      end
+    end
+  end
+  -- Now check other patterns (skip hex6/hex3)
+  local patterns = {
+    {name = 'rgb', pattern = 'rgb%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%)'},
+    {name = 'rgb_percent', pattern = 'rgb%s*%(%s*%d+%s*%%%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*%)'},
+    {name = 'hsl', pattern = 'hsl%s*%(%s*%d+%s*,%s*%d+%s*%%,%s*%d+%s*%%s*%)'},
+    {name = 'hwb', pattern = 'hwb%s*%(%s*%d+%s+%d+%%%s+%d+%%%s*%)'}
+  }
+  for _, pat in ipairs(patterns) do
+    for match in string.gmatch(element.text, pat.pattern) do
+      table.insert(matches, {name = pat.name, value = match})
+    end
+  end
+
   local hex = nil
   local original_colour_text = nil
+  if #matches > 1 then
+    quarto.log.warning(
+      'Multiple colour matches found in text: "' .. stringify(element.text) .. '". ' ..
+      'No colour preview will be generated.'
+    )
+    return nil, nil -- More than one colour match found, return nil
+  end
 
-  for i = 6, 3, -1 do
-    hex = element.text:match('(' .. get_hex_color(i) .. ')')
-    if (i == 5 or i == 4) and hex ~= nil then
-      hex = nil
+  for _, match in ipairs(matches) do
+    if match.name == 'hex6' or match.name == 'hex3' then
+      hex = match.value
+      original_colour_text = match.value
       break
-    end
-    if hex ~= nil and (i == 6 or i == 3) then
-      original_colour_text = hex
+    elseif match.name == 'rgb' then
+      hex = RGBtoHTML(match.value)
+      original_colour_text = match.value
       break
-    end
-  end
-  if hex == nil then
-    original_colour_text = element.text:match('(rgb%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%))')
-    if original_colour_text ~= nil then
-      hex = RGBtoHTML(original_colour_text)
-    end
-  end
-  if hex == nil then
-    original_colour_text = element.text:match('(rgb%s*%(%s*%d+%s*%%%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*%))')
-    if original_colour_text ~= nil then
-      hex = RGBPercentToHTML(original_colour_text)
-    end
-  end
-  if hex == nil then
-    original_colour_text = element.text:match('(hsl%s*%(%s*%d+%s*,%s*%d+%s*%%,%s*%d+%s*%%s*%))')
-    if original_colour_text ~= nil then
-      hex = HSLtoHTML(original_colour_text)
-    end
-  end
-  if hex == nil then
-    original_colour_text = element.text:match('(hwb%s*%(%s*%d+%s+%d+%%%s+%d+%%%s*%))')
-    if original_colour_text ~= nil then
-      hex = HWBtoHTML(original_colour_text)
+    elseif match.name == 'rgb_percent' then
+      hex = RGBPercentToHTML(match.value)
+      original_colour_text = match.value
+      break
+    elseif match.name == 'hsl' then
+      hex = HSLtoHTML(match.value)
+      original_colour_text = match.value
+      break
+    elseif match.name == 'hwb' then
+      hex = HWBtoHTML(match.value)
+      original_colour_text = match.value
+      break
     end
   end
 
