@@ -22,32 +22,33 @@
 # SOFTWARE.
 ]]
 
---- Pandoc utility function for stringifying elements
---- @type function
+--- Pandoc utility function for stringifying elements.
+---- @param element table Pandoc element to stringify.
+---- @return string Stringified element.
 local stringify = pandoc.utils.stringify
 
---- Flag to track if deprecation warning has been shown
+--- Flag to track if deprecation warning has been shown.
 --- @type boolean
 local deprecation_warning_shown = false
 
 --- Check if a string is empty or nil.
---- @param s string|nil The string to check
---- @return boolean True if the string is nil or empty, false otherwise
+--- @param s string|nil The string to check.
+--- @return boolean True if the string is nil or empty, false otherwise.
 local function is_empty(s)
   return s == nil or s == ''
 end
 
---- Default configuration for preview colour features
+--- Default configuration for preview colour features.
 --- @type table<string, boolean>
 local preview_colour_meta = {
   ["text"] = false,
   ["code"] = true
 }
 
---- Check for deprecated top-level preview-colour configuration and emit warning.
---- @param meta table<string, any> Document metadata table
---- @param key string The configuration key being accessed
---- @return boolean|nil The value from deprecated config, or nil if not found
+--- Check for deprecated top-level preview-colour configuration and emit warning if found.
+--- @param meta table<string, any> Document metadata table.
+--- @param key string The configuration key being accessed.
+--- @return boolean|nil The value from deprecated config, or nil if not found.
 local function check_deprecated_config(meta, key)
   if not is_empty(meta['preview-colour']) and not is_empty(meta['preview-colour'][key]) then
     if not deprecation_warning_shown then
@@ -66,9 +67,9 @@ local function check_deprecated_config(meta, key)
 end
 
 --- Get preview-colour option from metadata with deprecation support.
---- @param key string The option name to retrieve
---- @param meta table<string, any> Document metadata table
---- @return boolean The option value as a boolean
+--- @param key string The option name to retrieve.
+--- @param meta table<string, any> Document metadata table.
+--- @return boolean The option value as a boolean.
 local function get_preview_colour_option(key, meta)
   -- Check new nested structure: extensions.preview-colour.key
   if not is_empty(meta['extensions']) and
@@ -94,10 +95,10 @@ local function get_preview_colour_option(key, meta)
 end
 
 --- Convert RGB colour notation to HTML hex format.
---- @param rgb string RGB colour string in format "rgb(r, g, b)"
---- @return string HTML hex colour code in uppercase format (e.g., "#FF0000")
+--- @param rgb string RGB colour string in format "rgb(r, g, b)".
+--- @return string HTML hex colour code in uppercase format (e.g., "#FF0000").
 function RGBtoHTML(rgb)
-  local r, g, b = rgb:match("rgb%((%d+)%s*,%s*(%d+)%s*,%s*(%d+)%)")
+  local r, g, b = rgb:match("rgb%((%d+)%s*,%s*(%d+)%s*,%s*(%d+)%s*%)")
   r = tonumber(r)
   g = tonumber(g)
   b = tonumber(b)
@@ -105,8 +106,8 @@ function RGBtoHTML(rgb)
 end
 
 --- Convert RGB percentage notation to HTML hex format.
---- @param rgb string RGB colour string in format "rgb(r%, g%, b%)"
---- @return string HTML hex colour code in uppercase format (e.g., "#FF0000")
+--- @param rgb string RGB colour string in format "rgb(r%, g%, b%)".
+--- @return string HTML hex colour code in uppercase format (e.g., "#FF0000").
 function RGBPercentToHTML(rgb)
   local r, g, b = rgb:match("rgb%((%d+)%s*%%%s*,%s*(%d+)%s*%%%s*,%s*(%d+)%s*%%%s*%)")
   r = math.floor(tonumber(r) * 255 / 100 + 0.5)
@@ -116,8 +117,8 @@ function RGBPercentToHTML(rgb)
 end
 
 --- Convert HSL colour notation to HTML hex format.
---- @param hsl string HSL colour string in format "hsl(h, s%, l%)"
---- @return string HTML hex colour code in uppercase format (e.g., "#FF0000")
+--- @param hsl string HSL colour string in format "hsl(h, s%, l%)".
+--- @return string HTML hex colour code in uppercase format (e.g., "#FF0000").
 function HSLtoHTML(hsl)
   local h, s, l = hsl:match("hsl%((%d+)%s*,%s*(%d+)%%%s*,%s*(%d+)%%%s*%)")
   h = tonumber(h) / 360
@@ -128,7 +129,7 @@ function HSLtoHTML(hsl)
   --- @param p number
   --- @param q number
   --- @param t number
-  --- @return number RGB component value
+  --- @return number RGB component value.
   local function hue_to_rgb(p, q, t)
     if t < 0 then t = t + 1 end
     if t > 1 then t = t - 1 end
@@ -157,29 +158,29 @@ function HSLtoHTML(hsl)
 end
 
 --- Convert HWB colour notation to HTML hex format.
---- @param hwb string HWB colour string in format "hwb(h w% b%)"
---- @return string HTML hex colour code in uppercase format (e.g., "#FF0000")
+--- @param hwb string HWB colour string in format "hwb(h w% b%)".
+--- @return string HTML hex colour code in uppercase format (e.g., "#FF0000").
 function HWBtoHTML(hwb)
   local h, w, b = hwb:match("hwb%((%d+)%s+(%d+)%%%s+(%d+)%%%s*%)")
   h = tonumber(h)
   w = tonumber(w) / 100
   b = tonumber(b) / 100
 
-  -- Normalize whiteness and blackness
+  -- Normalize whiteness and blackness.
   local sum = w + b
   if sum > 1 then
     w = w / sum
     b = b / sum
   end
 
-  -- Convert HWB to RGB
-  -- First convert hue to RGB (assuming full saturation and 50% lightness)
+  -- Convert HWB to RGB.
+  -- First convert hue to RGB (assuming full saturation and 50% lightness).
   h = h / 360
   --- Helper function to convert hue to RGB component for HWB.
   --- @param p number
   --- @param q number
   --- @param t number
-  --- @return number RGB component value
+  --- @return number RGB component value.
   local function hue_to_rgb(p, q, t)
     if t < 0 then t = t + 1 end
     if t > 1 then t = t - 1 end
@@ -189,37 +190,37 @@ function HWBtoHTML(hwb)
     return p
   end
 
-  local r, g, b_color
+  local r, g, b_colour
   local q = 1
   local p = 0
   r = hue_to_rgb(p, q, h + 1 / 3)
   g = hue_to_rgb(p, q, h)
-  b_color = hue_to_rgb(p, q, h - 1 / 3)
+  b_colour = hue_to_rgb(p, q, h - 1 / 3)
 
-  -- Apply whiteness and blackness
+  -- Apply whiteness and blackness.
   r = r * (1 - w - b) + w
   g = g * (1 - w - b) + w
-  b_color = b_color * (1 - w - b) + w
+  b_colour = b_colour * (1 - w - b) + w
 
   r = math.floor(r * 255 + 0.5)
   g = math.floor(g * 255 + 0.5)
-  b_color = math.floor(b_color * 255 + 0.5)
+  b_colour = math.floor(b_colour * 255 + 0.5)
 
-  return string.upper(string.format("#%02x%02x%02x", r, g, b_color))
+  return string.upper(string.format("#%02x%02x%02x", r, g, b_colour))
 end
 
 --- Escape special LaTeX characters in text.
---- @param text string The text to escape
---- @return string The escaped text safe for LaTeX
+--- @param text string The text to escape.
+--- @return string The escaped text safe for LaTeX.
 function escape_latex(text)
-  -- Escape special LaTeX characters
-  -- Note: Order matters - backslash must be escaped first
+  -- Escape special LaTeX characters.
+  -- Note: Order matters - backslash must be escaped first.
   text = string.gsub(text, "\\", "\\textbackslash{}")
   text = string.gsub(text, "%{", "\\{")
   text = string.gsub(text, "%}", "\\}")
   text = string.gsub(text, "%$", "\\$")
   text = string.gsub(text, "%&", "\\&")
-  text = string.gsub(text, "%%", "\\%%") -- Escape % in replacement string
+  text = string.gsub(text, "%%", "\\%%") -- Escape % in replacement string.
   text = string.gsub(text, "%#", "\\#")
   text = string.gsub(text, "%^", "\\textasciicircum{}")
   text = string.gsub(text, "%_", "\\_")
@@ -228,20 +229,20 @@ function escape_latex(text)
 end
 
 --- Escape special Typst characters in text.
---- @param text string The text to escape
---- @return string The escaped text safe for Typst
+--- @param text string The text to escape.
+--- @return string The escaped text safe for Typst.
 function escape_typst(text)
-  -- Escape special Typst characters
+  -- Escape special Typst characters.
   text = string.gsub(text, "%#", "\\#")
   return text
 end
 
 --- Escape special Lua pattern characters for use in string.gsub.
---- @param text string The text containing characters to escape
---- @return string The escaped text safe for Lua patterns
+--- @param text string The text containing characters to escape.
+--- @return string The escaped text safe for Lua patterns.
 function escape_lua_pattern(text)
-  -- Escape special Lua pattern characters for use in string.gsub
-  text = string.gsub(text, "%%", "%%%%") -- % must be escaped first
+  -- Escape special Lua pattern characters for use in string.gsub.
+  text = string.gsub(text, "%%", "%%%%") -- % must be escaped first.
   text = string.gsub(text, "%^", "%%^")
   text = string.gsub(text, "%$", "%%$")
   text = string.gsub(text, "%(", "%%(")
@@ -257,19 +258,19 @@ function escape_lua_pattern(text)
 end
 
 --- Expand 3-character hex colour to 6-character format.
---- @param hex string Hex colour code (either #123 or #123456 format)
---- @return string 6-character hex colour code (e.g., #123 becomes #112233)
+--- @param hex string Hex colour code (either #123 or #123456 format).
+--- @return string 6-character hex colour code (e.g., #123 becomes #112233).
 function expand_hex_colour(hex)
-  -- Convert 3-character hex to 6-character hex (e.g., #123 -> #112233)
+  -- Convert 3-character hex to 6-character hex (e.g., #123 -> #112233).
   if string.len(hex) == 4 then -- #123 format
     return (string.gsub(hex, "#(%x)(%x)(%x)", "#%1%1%2%2%3%3"))
   end
-  return hex -- Already 6-character or other format
+  return hex -- Already 6-character or other format.
 end
 
 --- Extract and configure colour preview settings from document metadata.
---- @param meta table<string, any> Document metadata table
---- @return table<string, any> Updated metadata table with preview-colour configuration
+--- @param meta table<string, any> Document metadata table.
+--- @return table<string, any> Updated metadata table with preview-colour configuration.
 function get_colour_preview_meta(meta)
   local preview_colour_text = get_preview_colour_option('text', meta)
   local preview_colour_code = get_preview_colour_option('code', meta)
@@ -282,42 +283,94 @@ function get_colour_preview_meta(meta)
   return meta
 end
 
+--- Create colour preview mark for HTML format.
+--- @param hex string Hex colour code.
+--- @return string HTML colour preview mark.
+local function create_html_colour_mark(hex)
+  return '<span style="display: inline-block; color: ' ..
+      hex ..
+      '; cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; position: relative;" title="Colour preview: ' ..
+      hex ..
+      ' (click to copy)" aria-label="Colour preview: ' ..
+      hex ..
+      ' (click to copy)" onclick="navigator.clipboard.writeText(\'' ..
+      hex ..
+      '\').then(() => { const span = this; const originalTitle = span.title; span.title = \'Copied: ' ..
+      hex ..
+      '\'; let tooltip = document.createElement(\'div\'); tooltip.textContent = \'Copied!\'; tooltip.style.cssText = \'position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:4px 8px;border-radius:4px;font-size:12px;font-family:sans-serif;white-space:nowrap;z-index:9999;box-shadow:0 2px 4px rgba(0,0,0,0.3);pointer-events:none;\'; span.appendChild(tooltip); setTimeout(() => { span.title = originalTitle; if (span.contains(tooltip)) span.removeChild(tooltip); }, 1500); }).catch(() => console.error(\'Failed to copy colour code\'));">&#9673;</span>'
+end
+
+--- Create colour preview mark for LaTeX format.
+--- @param hex string Hex colour code.
+--- @return string LaTeX colour preview mark.
+local function create_latex_colour_mark(hex)
+  local hex_colour_six = expand_hex_colour(hex)
+  return "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
+end
+
+--- Create colour preview mark for Typst format.
+--- @param hex string Hex colour code.
+--- @return string Typst colour preview mark.
+local function create_typst_colour_mark(hex)
+  local hex_colour_six = expand_hex_colour(hex)
+  return '#text(fill: rgb("' .. string.lower(hex_colour_six) .. '"))[◉]'
+end
+
+--- Create colour preview mark for DOCX format using OpenXML.
+--- @param hex string Hex colour code.
+--- @return string DOCX colour preview mark using OpenXML.
+local function create_docx_colour_mark(hex)
+  local hex_colour_six = expand_hex_colour(hex)
+  local hex_without_hash = string.gsub(hex_colour_six, '#', '')
+  return '<w:r><w:rPr><w:color w:val="' .. hex_without_hash .. '"/></w:rPr><w:t>●</w:t></w:r>'
+end
+
+--- Create colour preview mark for PPTX format using OpenXML.
+--- @param hex string Hex colour code.
+--- @return string PPTX colour preview mark using OpenXML.
+local function create_pptx_colour_mark(hex)
+  local hex_colour_six = expand_hex_colour(hex)
+  local hex_without_hash = string.gsub(hex_colour_six, '#', '')
+  return '<a:r><a:rPr dirty="0"><a:solidFill><a:srgbClr val="' ..
+      hex_without_hash .. '" /></a:solidFill></a:rPr><a:t>●</a:t></a:r>'
+end
+
 --- Extract colour information from a pandoc element.
---- @param element table Pandoc element containing text to analyse
---- @return string|nil hex Extracted hex colour code or nil if no colour found
---- @return string|nil original_colour_text Original colour text that was matched
+--- @param element table Pandoc element containing text to analyse.
+--- @return string|nil Extracted hex colour code or nil if no colour found.
+--- @return string|nil Original colour text that was matched.
 function get_colour(element)
   --- Generate hex colour pattern for matching.
-  --- @param n number Number of hex characters to match
-  --- @return string Lua pattern for matching hex colours
-  function get_hex_color(n)
+  --- @param n number Number of hex characters to match.
+  --- @return string Lua pattern for matching hex colours.
+  local function get_hex_colour(n)
     return '#' .. string.rep('[0-9a-fA-F]', n)
   end
 
-  local hex6 = element.text:match(get_hex_color(6))
+  local hex6 = element.text:match(get_hex_colour(6))
   local matches = {}
   if hex6 then
-    for match in string.gmatch(element.text, get_hex_color(6)) do
-      table.insert(matches, {name = 'hex6', value = match})
+    for match in string.gmatch(element.text, get_hex_colour(6)) do
+      table.insert(matches, { name = 'hex6', value = match })
     end
   else
-    local hex3 = element.text:match(get_hex_color(3))
+    local hex3 = element.text:match(get_hex_colour(3))
     if hex3 then
-      for match in string.gmatch(element.text, get_hex_color(3)) do
-        table.insert(matches, {name = 'hex3', value = match})
+      for match in string.gmatch(element.text, get_hex_colour(3)) do
+        table.insert(matches, { name = 'hex3', value = match })
       end
     end
   end
-  -- Now check other patterns (skip hex6/hex3)
+  -- Now check other patterns (skip hex6/hex3).
   local patterns = {
-    {name = 'rgb', pattern = 'rgb%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%)'},
-    {name = 'rgb_percent', pattern = 'rgb%s*%(%s*%d+%s*%%%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*%)'},
-    {name = 'hsl', pattern = 'hsl%s*%(%s*%d+%s*,%s*%d+%s*%%,%s*%d+%s*%%s*%)'},
-    {name = 'hwb', pattern = 'hwb%s*%(%s*%d+%s+%d+%%%s+%d+%%%s*%)'}
+    { name = 'rgb',         pattern = 'rgb%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%)' },
+    { name = 'rgb_percent', pattern = 'rgb%s*%(%s*%d+%s*%%%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*%)' },
+    { name = 'hsl',         pattern = 'hsl%s*%(%s*%d+%s*,%s*%d+%s*%%,%s*%d+%s*%%s*%)' },
+    { name = 'hwb',         pattern = 'hwb%s*%(%s*%d+%s+%d+%%%s+%d+%%%s*%)' }
   }
   for _, pat in ipairs(patterns) do
     for match in string.gmatch(element.text, pat.pattern) do
-      table.insert(matches, {name = pat.name, value = match})
+      table.insert(matches, { name = pat.name, value = match })
     end
   end
 
@@ -328,7 +381,7 @@ function get_colour(element)
       'Multiple colour matches found in text: "' .. stringify(element.text) .. '". ' ..
       'No colour preview will be generated.'
     )
-    return nil, nil -- More than one colour match found, return nil
+    return nil, nil -- More than one colour match found, return nil.
   end
 
   for _, match in ipairs(matches) do
@@ -355,8 +408,8 @@ function get_colour(element)
     end
   end
 
-  -- Check if the matched colour text is the entire element text
-  -- This prevents partial matches from being considered valid
+  -- Check if the matched colour text is the entire element text.
+  -- This prevents partial matches from being considered valid.
   -- https://github.com/mcanouil/quarto-preview-colour/issues/24
   if #matches == 1 and #matches[1].value ~= #element.text then
     return nil, nil
@@ -365,156 +418,100 @@ function get_colour(element)
   return hex, original_colour_text
 end
 
---- Create colour preview mark for HTML format.
---- @param hex string Hex colour code
---- @return string HTML colour preview mark
-local function create_html_colour_mark(hex)
-  return '<span style="display: inline-block; color: ' ..
-  hex ..
-  '; cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; position: relative;" title="Colour preview: ' ..
-  hex ..
-  ' (click to copy)" aria-label="Colour preview: ' ..
-  hex ..
-  ' (click to copy)" onclick="navigator.clipboard.writeText(\'' ..
-  hex ..
-  '\').then(() => { const span = this; const originalTitle = span.title; span.title = \'Copied: ' ..
-  hex ..
-  '\'; let tooltip = document.createElement(\'div\'); tooltip.textContent = \'Copied!\'; tooltip.style.cssText = \'position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:4px 8px;border-radius:4px;font-size:12px;font-family:sans-serif;white-space:nowrap;z-index:9999;box-shadow:0 2px 4px rgba(0,0,0,0.3);pointer-events:none;\'; span.appendChild(tooltip); setTimeout(() => { span.title = originalTitle; if (span.contains(tooltip)) span.removeChild(tooltip); }, 1500); }).catch(() => console.error(\'Failed to copy colour code\'));">&#9673;</span>'
-end
-
---- Create colour preview mark for LaTeX format.
---- @param hex string Hex colour code
---- @return string LaTeX colour preview mark
-local function create_latex_colour_mark(hex)
-  local hex_colour_six = expand_hex_colour(hex)
-  return "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
-end
-
---- Create colour preview mark for Typst format.
---- @param hex string Hex colour code
---- @return string Typst colour preview mark
-local function create_typst_colour_mark(hex)
-  local hex_colour_six = expand_hex_colour(hex)
-  return '#text(fill: rgb("' .. string.lower(hex_colour_six) .. '"))[◉]'
-end
-
---- Create colour preview mark for DOCX format.
---- @param hex string Hex colour code
---- @return string DOCX colour preview mark using OpenXML
-local function create_docx_colour_mark(hex)
-  local hex_colour_six = expand_hex_colour(hex)
-  local hex_without_hash = string.gsub(hex_colour_six, '#', '')
-  return '<w:r><w:rPr><w:color w:val="' .. hex_without_hash .. '"/></w:rPr><w:t>●</w:t></w:r>'
-end
-
---- Create colour preview mark for PPTX format.
---- @param hex string Hex colour code
---- @return string PPTX colour preview mark using OpenXML
-local function create_pptx_colour_mark(hex)
-  local hex_colour_six = expand_hex_colour(hex)
-  local hex_without_hash = string.gsub(hex_colour_six, '#', '')
-  return '<a:r><a:rPr dirty="0"><a:solidFill><a:srgbClr val="' .. hex_without_hash .. '" /></a:solidFill></a:rPr><a:t>●</a:t></a:r>'
-end
-
---- Get format-specific colour preview mark.
---- @param hex string Hex colour code
---- @return string|nil format Format name (html, latex, typst, openxml) or nil if unsupported
---- @return string|nil mark Colour preview mark for the format or nil if unsupported
-local function get_colour_mark_for_format(hex)
-  if quarto.doc.is_format("html:js") then
-    return "html", create_html_colour_mark(hex)
-  elseif quarto.doc.is_format("latex") then
-    return "latex", create_latex_colour_mark(hex)
-  elseif quarto.doc.is_format("typst") then
-    return "typst", create_typst_colour_mark(hex)
-  elseif quarto.doc.is_format("docx") then
-    return "openxml", create_docx_colour_mark(hex)
-  elseif quarto.doc.is_format("pptx") then
-    return "openxml", create_pptx_colour_mark(hex)
-  end
-  return nil, nil
-end
-
 --- Process text replacement for string elements with colour previews.
---- @param element table Pandoc element containing text
---- @param original_colour_text string Original colour text found in element
---- @param format string Output format name
---- @param colour_mark string Colour preview mark for the format
---- @return table|nil Modified pandoc element or nil
-local function process_text_replacement(element, original_colour_text, format, colour_mark)
-  -- For OpenXML formats (DOCX/PPTX), we need to return a Span with separate elements
-  if format == "openxml" then
+--- @param element table Pandoc element containing text.
+--- @param format string Output format name.
+--- @param colour_mark string Colour preview mark for the format.
+--- @param original_colour_text string|nil Original colour text found in element.
+--- @return table Modified pandoc element.
+local function process_element(element, format, colour_mark, original_colour_text)
+  if element.t ~= "Str" and element.t ~= "Code" then
+    return element -- Return original element if not a Str or Code.
+  end
+
+  if element.t == "Str" and original_colour_text ~= nil and colour_mark ~= nil then
+    -- For OpenXML formats (DOCX/PPTX), we need to return a Span with separate elements.
+    if format == "openxml" then
+      local escaped_pattern = escape_lua_pattern(original_colour_text)
+      local escaped_replacement = string.gsub(original_colour_text, "%%", "%%%%")
+      local new_text = string.gsub(element.text, escaped_pattern, escaped_replacement)
+      return pandoc.Span({
+        pandoc.Str(new_text),
+        pandoc.RawInline(format, colour_mark)
+      })
+    end
+
+    -- For other formats (LaTeX, Typst), use the existing concatenation approach.
+    local escaped_original = original_colour_text
+    if format == "latex" then
+      escaped_original = escape_latex(original_colour_text)
+    elseif format == "typst" then
+      escaped_original = escape_typst(original_colour_text)
+    end
+
     local escaped_pattern = escape_lua_pattern(original_colour_text)
-    local escaped_replacement = string.gsub(original_colour_text, "%%", "%%%%")
+    local escaped_colour_mark = string.gsub(colour_mark, "%%", "%%%%")
+    local escaped_replacement = string.gsub(escaped_original, "%%", "%%%%") .. escaped_colour_mark
     local new_text = string.gsub(element.text, escaped_pattern, escaped_replacement)
-    return pandoc.Span({ 
-      pandoc.Str(new_text), 
-      pandoc.RawInline(format, colour_mark) 
-    })
+
+    return pandoc.RawInline(format, new_text)
   end
 
-  -- For other formats (LaTeX, Typst), use the existing concatenation approach
-  local escaped_original = original_colour_text
-  if format == "latex" then
-    escaped_original = escape_latex(original_colour_text)
-  elseif format == "typst" then
-    escaped_original = escape_typst(original_colour_text)
+  if element.t == "Code" and colour_mark ~= nil then
+    return pandoc.Span({ element, pandoc.RawInline(format, colour_mark) })
   end
 
-  local escaped_pattern = escape_lua_pattern(original_colour_text)
-  local escaped_colour_mark = string.gsub(colour_mark, "%%", "%%%%")
-  local escaped_replacement = string.gsub(escaped_original, "%%", "%%%%") .. escaped_colour_mark
-  local new_text = string.gsub(element.text, escaped_pattern, escaped_replacement)
-
-  return pandoc.RawInline(format, new_text)
+  return element
 end
 
---- Process code element with colour preview.
---- @param element table Pandoc Code element
---- @param format string Output format name
---- @param colour_mark string Colour preview mark for the format
---- @return table Modified pandoc element
-local function process_code_element(element, format, colour_mark)
-  return pandoc.Span({ element, pandoc.RawInline(format, colour_mark) })
+--- Add a colour preview mark to a Pandoc element if a valid colour is found.
+--- Handles multiple output formats (HTML, LaTeX, Typst, DOCX, PPTX).
+--- @param element table Pandoc Str or Code element to process.
+--- @return table Pandoc element (Str, Code, RawInline, or Span) with colour preview if a valid colour is found, otherwise the original element.
+local function add_colour_mark(element)
+  local hex, original_colour_text = get_colour(element)
+  if hex == nil then
+    return element -- No valid colour found, return original element.
+  end
+  if quarto.doc.is_format("html:js") then
+    return process_element(element, "html", create_html_colour_mark(hex), original_colour_text)
+  elseif quarto.doc.is_format("latex") then
+    return process_element(element, "latex", create_latex_colour_mark(hex), original_colour_text)
+  elseif quarto.doc.is_format("typst") then
+    return process_element(element, "typst", create_typst_colour_mark(hex), original_colour_text)
+  elseif quarto.doc.is_format("docx") then
+    return process_element(element, "openxml", create_docx_colour_mark(hex), original_colour_text)
+  elseif quarto.doc.is_format("pptx") then
+    return process_element(element, "openxml", create_pptx_colour_mark(hex), original_colour_text)
+  end
+  return element
 end
 
 --- Process string elements to add colour previews in text.
---- @param element table Pandoc Str element
---- @return table|nil Modified pandoc element with colour preview, or original element
+--- @param element table Pandoc Str element.
+--- @return table|nil Modified pandoc element with colour preview, or original element.
 function process_str(element)
   if preview_colour_meta['text'] == false then
     return element
   end
 
-  local hex, original_colour_text = get_colour(element)
-  if hex ~= nil and original_colour_text ~= nil then
-    local format, colour_mark = get_colour_mark_for_format(hex)
-    if format and colour_mark then
-      return process_text_replacement(element, original_colour_text, format, colour_mark)
-    end
-  end
+  return add_colour_mark(element)
 end
 
 --- Process code elements to add colour previews.
---- @param element table Pandoc Code element
---- @return table|nil Modified pandoc element with colour preview, or original element
+--- @param element table Pandoc Code element.
+--- @return table|nil Modified pandoc element with colour preview, or original element.
 function process_code(element)
   if preview_colour_meta['code'] == false then
     return element
   end
 
-  local hex, original_colour_text = get_colour(element)
-  if hex ~= nil and original_colour_text ~= nil then
-    local format, colour_mark = get_colour_mark_for_format(hex)
-    if format and colour_mark then
-      return process_code_element(element, format, colour_mark)
-    end
-  end
+  return add_colour_mark(element)
 end
 
---- Pandoc filter configuration
---- Defines the processing pipeline for different pandoc elements
---- @type table<number, table<string, function>>
+--- Pandoc filter configuration.
+--- Defines the processing pipeline for different pandoc elements.
+--- @return table Filter table for Pandoc.
 return {
   { Meta = get_colour_preview_meta },
   { Str = process_str },
