@@ -355,6 +355,13 @@ function get_colour(element)
     end
   end
 
+  -- Check if the matched colour text is the entire element text
+  -- This prevents partial matches from being considered valid
+  -- https://github.com/mcanouil/quarto-preview-colour/issues/24
+  if #matches == 1 and #matches[1].value ~= #element.text then
+    return nil, nil
+  end
+
   return hex, original_colour_text
 end
 
