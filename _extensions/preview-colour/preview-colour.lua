@@ -480,9 +480,8 @@ end
 
 --- Process string elements to add colour previews in text.
 --- @param element table Pandoc Str element
---- @param meta table<string, any> Document metadata (currently unused)
 --- @return table|nil Modified pandoc element with colour preview, or original element
-function process_str(element, meta)
+function process_str(element)
   if preview_colour_meta['text'] == false then
     return element
   end
