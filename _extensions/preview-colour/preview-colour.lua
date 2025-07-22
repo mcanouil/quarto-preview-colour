@@ -23,8 +23,7 @@
 ]]
 
 --- Pandoc utility function for stringifying elements.
---- @param element table Pandoc element to stringify.
---- @return string Stringified element.
+--- @type fun(element: table): string
 local stringify = pandoc.utils.stringify
 
 --- Flag to track if deprecation warning has been shown.
