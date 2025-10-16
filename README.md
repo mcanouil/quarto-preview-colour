@@ -23,7 +23,8 @@ Add the extension to your document's YAML front matter:
 
 ```yaml
 filters:
-  - preview-colour
+  - path: preview-colour
+    at: post-quarto
 ```
 
 ````qmd
