@@ -21,11 +21,23 @@ If you're using version control, you will want to check in this directory.
 
 Add the extension to your document's YAML front matter:
 
-```yaml
-filters:
-  - path: preview-colour
-    at: post-quarto
-```
+To activate the filter, add the following to your YAML front matter:
+
+- Old (<1.8.21):
+
+  ```yml
+  filters:
+    - quarto
+    - preview-colour
+  ```
+
+- New (>=1.8.21):
+
+  ```yml
+  filters:
+    - path: preview-colour
+      at: post-quarto
+  ```
 
 ````qmd
 - code: `#441100` or `rgb(10, 100, 200)`
