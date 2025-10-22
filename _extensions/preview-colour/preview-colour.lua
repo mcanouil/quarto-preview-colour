@@ -22,39 +22,15 @@
 # SOFTWARE.
 ]]
 
---- Pandoc utility function for stringifying elements.
---- @type fun(element: table): string
-local stringify = pandoc.utils.stringify
+--- Load utils and colour modules
+local utils_path = quarto.utils.resolve_path("utils.lua")
+local utils = require(utils_path)
+local colour_path = quarto.utils.resolve_path("colour.lua")
+local colour = require(colour_path)
 
 --- Flag to track if deprecation warning has been shown.
 --- @type boolean
 local deprecation_warning_shown = false
-
---- Check if a string is empty or nil.
---- @param s string|nil The string to check.
---- @return boolean True if the string is nil or empty, false otherwise.
-local function is_empty(s)
-  return s == nil or s == ''
-end
-
---- Retrieve the current Quarto output format.
---- @return string The output format ("pptx", "html", "latex", "typst", "docx", or "unknown").
---- @return string The language of the output format.
-local function get_quarto_format()
-  if quarto.doc.is_format("html:js") then
-    return "html", "html"
-  elseif quarto.doc.is_format("latex") then
-    return "latex", "latex"
-  elseif quarto.doc.is_format("typst") then
-    return "typst", "typst"
-  elseif quarto.doc.is_format("docx") then
-    return "docx", "openxml"
-  elseif quarto.doc.is_format("pptx") then
-    return "pptx", "openxml"
-  else
-    return "unknown", "unknown"
-  end
-end
 
 --- Default configuration for preview colour features.
 --- @type table<string, boolean>
@@ -68,20 +44,9 @@ local preview_colour_meta = {
 --- @param key string The configuration key being accessed.
 --- @return boolean|nil The value from deprecated config, or nil if not found.
 local function check_deprecated_config(meta, key)
-  if not is_empty(meta['preview-colour']) and not is_empty(meta['preview-colour'][key]) then
-    if not deprecation_warning_shown then
-      quarto.log.warning(
-        'Top-level "preview-colour" configuration is deprecated. ' ..
-        'Please use:\n' ..
-        'extensions:\n' ..
-        '  preview-colour:\n' ..
-        '    ' .. key .. ': value'
-      )
-      deprecation_warning_shown = true
-    end
-    return meta['preview-colour'][key]
-  end
-  return nil
+  local value
+  value, deprecation_warning_shown = utils.check_deprecated_config(meta, 'preview-colour', key, deprecation_warning_shown)
+  return value
 end
 
 --- Get preview-colour option from metadata with deprecation support.
@@ -90,10 +55,9 @@ end
 --- @return boolean The option value as a boolean.
 local function get_preview_colour_option(key, meta)
   -- Check new nested structure: extensions.preview-colour.key
-  if not is_empty(meta['extensions']) and
-      not is_empty(meta['extensions']['preview-colour']) and
-      not is_empty(meta['extensions']['preview-colour'][key]) then
-    return meta['extensions']['preview-colour'][key]
+  local meta_value = utils.get_metadata_value(meta, 'preview-colour', key)
+  if not utils.is_empty(meta_value) then
+    return meta_value
   end
 
   -- Check deprecated top-level structure: preview-colour.key (with warning)
@@ -112,207 +76,6 @@ local function get_preview_colour_option(key, meta)
   return true -- fallback for any other keys
 end
 
---- Convert RGB colour notation to HTML hex format.
---- @param rgb string RGB colour string in format "rgb(r, g, b)".
---- @return string HTML hex colour code in uppercase format (e.g., "#FF0000").
-local function RGB_to_HTML(rgb)
-  local r, g, b = rgb:match("rgb%((%d+)%s*,%s*(%d+)%s*,%s*(%d+)%s*%)")
-  r = tonumber(r)
-  g = tonumber(g)
-  b = tonumber(b)
-  return string.upper(string.format("#%02x%02x%02x", r, g, b))
-end
-
---- Convert RGB percentage notation to HTML hex format.
---- @param rgb string RGB colour string in format "rgb(r%, g%, b%)".
---- @return string HTML hex colour code in uppercase format (e.g., "#FF0000").
-local function RGBPercent_to_HTML(rgb)
-  local r, g, b = rgb:match("rgb%((%d+)%s*%%%s*,%s*(%d+)%s*%%%s*,%s*(%d+)%s*%%%s*%)")
-  r = math.floor(tonumber(r) * 255 / 100 + 0.5)
-  g = math.floor(tonumber(g) * 255 / 100 + 0.5)
-  b = math.floor(tonumber(b) * 255 / 100 + 0.5)
-  return string.upper(string.format("#%02x%02x%02x", r, g, b))
-end
-
---- Helper function to convert hue to RGB component.
---- @param p number
---- @param q number
---- @param t number
---- @return number RGB component value.
-local function hue_to_rgb(p, q, t)
-  if t < 0 then t = t + 1 end
-  if t > 1 then t = t - 1 end
-  if t < 1 / 6 then return p + (q - p) * 6 * t end
-  if t < 1 / 2 then return q end
-  if t < 2 / 3 then return p + (q - p) * (2 / 3 - t) * 6 end
-  return p
-end
-
---- Convert HSL colour notation to HTML hex format.
---- @param hsl string HSL colour string in format "hsl(h, s%, l%)".
---- @return string HTML hex colour code in uppercase format (e.g., "#FF0000").
-local function HSL_to_HTML(hsl)
-  local h, s, l = hsl:match("hsl%((%d+)%s*,%s*(%d+)%%%s*,%s*(%d+)%%%s*%)")
-  h = tonumber(h) / 360
-  s = tonumber(s) / 100
-  l = tonumber(l) / 100
-
-  local r, g, b
-  if s == 0 then
-    r, g, b = l, l, l -- achromatic
-  else
-    local q = l < 0.5 and l * (1 + s) or l + s - l * s
-    local p = 2 * l - q
-    r = hue_to_rgb(p, q, h + 1 / 3)
-    g = hue_to_rgb(p, q, h)
-    b = hue_to_rgb(p, q, h - 1 / 3)
-  end
-
-  r = math.floor(r * 255 + 0.5)
-  g = math.floor(g * 255 + 0.5)
-  b = math.floor(b * 255 + 0.5)
-
-  return string.upper(string.format("#%02x%02x%02x", r, g, b))
-end
-
---- Convert HWB colour notation to HTML hex format.
---- @param hwb string HWB colour string in format "hwb(h w% b%)".
---- @return string HTML hex colour code in uppercase format (e.g., "#FF0000").
-local function HWB_to_HTML(hwb)
-  local h, w, b = hwb:match("hwb%((%d+)%s+(%d+)%%%s+(%d+)%%%s*%)")
-  h = tonumber(h)
-  w = tonumber(w) / 100
-  b = tonumber(b) / 100
-
-  -- Normalize whiteness and blackness.
-  local sum = w + b
-  if sum > 1 then
-    w = w / sum
-    b = b / sum
-  end
-
-  -- Convert HWB to RGB.
-  -- First convert hue to RGB (assuming full saturation and 50% lightness).
-  h = h / 360
-
-  local r, g, b_colour
-  local q = 1
-  local p = 0
-  r = hue_to_rgb(p, q, h + 1 / 3)
-  g = hue_to_rgb(p, q, h)
-  b_colour = hue_to_rgb(p, q, h - 1 / 3)
-
-  -- Apply whiteness and blackness.
-  r = r * (1 - w - b) + w
-  g = g * (1 - w - b) + w
-  b_colour = b_colour * (1 - w - b) + w
-
-  r = math.floor(r * 255 + 0.5)
-  g = math.floor(g * 255 + 0.5)
-  b_colour = math.floor(b_colour * 255 + 0.5)
-
-  return string.upper(string.format("#%02x%02x%02x", r, g, b_colour))
-end
-
---- Expand 3-character hex colour to 6-character format.
---- @param hex string Hex colour code (either #123 or #123456 format).
---- @return string 6-character hex colour code (e.g., #123 becomes #112233).
-local function expand_hex_colour(hex)
-  -- Convert 3-character hex to 6-character hex (e.g., #123 -> #112233).
-  if string.len(hex) == 4 then -- #123 format
-    return (string.gsub(hex, "#(%x)(%x)(%x)", "#%1%1%2%2%3%3"))
-  end
-  return hex -- Already 6-character or other format.
-end
-
---- Convert a colour code to HTML format based on its format type.
---- @param code string The colour code to convert.
---- @param format string The colour format (e.g., "hwb", "hsl", "rgb", "rgb_percent", "hex").
-local function to_html(code, format)
-  local converters = {
-    hwb = HWB_to_HTML,
-    hsl = HSL_to_HTML,
-    rgb = RGB_to_HTML,
-    rgb_percent = RGBPercent_to_HTML,
-    hex = expand_hex_colour,
-    hex3 = expand_hex_colour,
-    hex6 = expand_hex_colour
-  }
-
-  local converter = converters[format]
-  if converter then
-    return converter(code)
-  else
-    error("Unsupported colour format: " .. format)
-  end
-end
-
---- Escape special LaTeX characters in text.
---- @param text string The text to escape.
---- @return string The escaped text safe for LaTeX.
-local function escape_latex(text)
-  -- Escape special LaTeX characters.
-  -- Note: Order matters - backslash must be escaped first.
-  text = string.gsub(text, "\\", "\\textbackslash{}")
-  text = string.gsub(text, "%{", "\\{")
-  text = string.gsub(text, "%}", "\\}")
-  text = string.gsub(text, "%$", "\\$")
-  text = string.gsub(text, "%&", "\\&")
-  text = string.gsub(text, "%%", "\\%%") -- Escape % in replacement string.
-  text = string.gsub(text, "%#", "\\#")
-  text = string.gsub(text, "%^", "\\textasciicircum{}")
-  text = string.gsub(text, "%_", "\\_")
-  text = string.gsub(text, "~", "\\textasciitilde{}")
-  return text
-end
-
---- Escape special Typst characters in text.
---- @param text string The text to escape.
---- @return string The escaped text safe for Typst.
-local function escape_typst(text)
-  -- Escape special Typst characters.
-  text = string.gsub(text, "%#", "\\#")
-  return text
-end
-
---- Escape special Lua pattern characters for use in string.gsub.
---- @param text string The text containing characters to escape.
---- @return string The escaped text safe for Lua patterns.
-local function escape_lua_pattern(text)
-  -- Escape special Lua pattern characters for use in string.gsub.
-  text = string.gsub(text, "%%", "%%%%") -- % must be escaped first.
-  text = string.gsub(text, "%^", "%%^")
-  text = string.gsub(text, "%$", "%%$")
-  text = string.gsub(text, "%(", "%%(")
-  text = string.gsub(text, "%)", "%%)")
-  text = string.gsub(text, "%.", "%%.")
-  text = string.gsub(text, "%[", "%%[")
-  text = string.gsub(text, "%]", "%%]")
-  text = string.gsub(text, "%*", "%%*")
-  text = string.gsub(text, "%+", "%%+")
-  text = string.gsub(text, "%-", "%%-")
-  text = string.gsub(text, "%?", "%%?")
-  return text
-end
-
---- Escape text for different formats.
---- @param text string The text to escape.
---- @param format string The format to escape for (e.g., "latex", "typst", "lua").
---- @return string The escaped text.
-local function escape_text(text, format)
-  local escape_functions = {
-    latex = escape_latex,
-    typst = escape_typst,
-    lua = escape_lua_pattern
-  }
-
-  local escape = escape_functions[format]
-  if escape then
-    return escape(text)
-  else
-    error("Unsupported escape format: " .. format)
-  end
-end
 
 --- Create colour preview mark for HTML format.
 --- @param hex string Hex colour code.
@@ -335,7 +98,7 @@ end
 --- @param hex string Hex colour code.
 --- @return string LaTeX colour preview mark.
 local function create_latex_colour_mark(hex)
-  local hex_colour_six = expand_hex_colour(hex)
+  local hex_colour_six = colour.expand_hex_colour(hex)
   return "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
 end
 
@@ -343,7 +106,7 @@ end
 --- @param hex string Hex colour code.
 --- @return string Typst colour preview mark.
 local function create_typst_colour_mark(hex)
-  local hex_colour_six = expand_hex_colour(hex)
+  local hex_colour_six = colour.expand_hex_colour(hex)
   return '#text(fill: rgb("' .. string.lower(hex_colour_six) .. '"))[◉]'
 end
 
@@ -351,7 +114,7 @@ end
 --- @param hex string Hex colour code.
 --- @return string DOCX colour preview mark using OpenXML.
 local function create_docx_colour_mark(hex)
-  local hex_colour_six = expand_hex_colour(hex)
+  local hex_colour_six = colour.expand_hex_colour(hex)
   local hex_without_hash = string.gsub(hex_colour_six, '#', '')
   return '<w:r><w:rPr><w:color w:val="' .. hex_without_hash .. '"/></w:rPr><w:t>●</w:t></w:r>'
 end
@@ -360,7 +123,7 @@ end
 --- @param hex string Hex colour code.
 --- @return string PPTX colour preview mark using OpenXML.
 local function create_pptx_colour_mark(hex)
-  local hex_colour_six = expand_hex_colour(hex)
+  local hex_colour_six = colour.expand_hex_colour(hex)
   local hex_without_hash = string.gsub(hex_colour_six, '#', '')
   return '<a:r><a:rPr dirty="0"><a:solidFill><a:srgbClr val="' ..
       hex_without_hash .. '" /></a:solidFill></a:rPr><a:t>●</a:t></a:r>'
@@ -426,7 +189,7 @@ local function get_colour(element)
   local original_colour_text = nil
   if #matches > 1 then
     quarto.log.warning(
-      'Multiple colour matches found in text: "' .. stringify(element.text) .. '". ' ..
+      'Multiple colour matches found in text: "' .. utils.stringify(element.text) .. '". ' ..
       'No colour preview will be generated.'
     )
     return nil, nil -- More than one colour match found, return nil.
@@ -434,7 +197,7 @@ local function get_colour(element)
 
   for _, match in ipairs(matches) do
     original_colour_text = match.value
-    hex = to_html(match.value, match.name)
+    hex = colour.to_html(match.value, match.name)
   end
 
   -- Check if the matched colour text is the entire element text.
@@ -465,7 +228,7 @@ local function process_element(element, format, colour_mark, original_colour_tex
   if element.t == "Str" and original_colour_text ~= nil and colour_mark ~= nil then
     -- For OpenXML formats (DOCX/PPTX), we need to return a Span with separate elements.
     if format == "openxml" then
-      local escaped_pattern = escape_text(original_colour_text, "lua")
+      local escaped_pattern = utils.escape_text(original_colour_text, "lua")
       local escaped_replacement = string.gsub(original_colour_text, "%%", "%%%%")
       local new_text = string.gsub(element.text, escaped_pattern, escaped_replacement)
       return pandoc.Span({
@@ -477,10 +240,10 @@ local function process_element(element, format, colour_mark, original_colour_tex
     -- For other formats (LaTeX, Typst), use the existing concatenation approach.
     local escaped_original = original_colour_text
     if format == "latex" or format == "typst" then
-      escaped_original = escape_text(original_colour_text, format)
+      escaped_original = utils.escape_text(original_colour_text, format)
     end
 
-    local escaped_pattern = escape_text(original_colour_text, "lua")
+    local escaped_pattern = utils.escape_text(original_colour_text, "lua")
     local escaped_colour_mark = string.gsub(colour_mark, "%%", "%%%%")
     local escaped_replacement = string.gsub(escaped_original, "%%", "%%%%") .. escaped_colour_mark
     local new_text = string.gsub(element.text, escaped_pattern, escaped_replacement)
@@ -500,7 +263,7 @@ local function add_colour_mark(element)
   if hex == nil then
     return element -- No valid colour found, return original element.
   end
-  local format, language = get_quarto_format()
+  local format, language = utils.get_quarto_format()
   if format == "unknown" then
     quarto.log.warning(
       'Unsupported output format for colour preview: "' .. language .. '". ' ..
