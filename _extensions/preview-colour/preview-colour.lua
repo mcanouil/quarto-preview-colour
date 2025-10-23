@@ -26,10 +26,8 @@
 local EXTENSION_NAME = "preview-colour"
 
 --- Load utils and colour modules
-local utils_path = quarto.utils.resolve_path("_modules/utils.lua")
-local utils = require(utils_path)
-local colour_path = quarto.utils.resolve_path("_modules/colour.lua")
-local colour = require(colour_path)
+local utils = require(quarto.utils.resolve_path("_modules/utils.lua"):gsub("%.lua$", ""))
+local colour = require(quarto.utils.resolve_path("_modules/colour.lua"):gsub("%.lua$", ""))
 
 --- Flag to track if deprecation warning has been shown.
 --- @type boolean
