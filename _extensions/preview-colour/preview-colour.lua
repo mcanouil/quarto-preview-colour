@@ -22,6 +22,9 @@
 # SOFTWARE.
 ]]
 
+--- Extension name constant
+local EXTENSION_NAME = "preview-colour"
+
 --- Load utils and colour modules
 local utils_path = quarto.utils.resolve_path("_modules/utils.lua")
 local utils = require(utils_path)
@@ -188,7 +191,8 @@ local function get_colour(element)
   local hex = nil
   local original_colour_text = nil
   if #matches > 1 then
-    quarto.log.warning(
+    utils.log_warning(
+      EXTENSION_NAME,
       'Multiple colour matches found in text: "' .. utils.stringify(element.text) .. '". ' ..
       'No colour preview will be generated.'
     )
@@ -265,7 +269,8 @@ local function add_colour_mark(element)
   end
   local format, language = utils.get_quarto_format()
   if format == "unknown" then
-    quarto.log.warning(
+    utils.log_warning(
+      EXTENSION_NAME,
       'Unsupported output format for colour preview: "' .. language .. '". ' ..
       'No colour preview will be generated.'
     )
