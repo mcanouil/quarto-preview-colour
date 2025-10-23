@@ -9,10 +9,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -277,7 +277,7 @@ end
 --- Extract and configure colour preview settings from document metadata.
 --- @param meta table<string, any> Document metadata table.
 --- @return table<string, any> Updated metadata table with preview-colour configuration.
-function get_colour_preview_meta(meta)
+local function get_colour_preview_meta(meta)
   local preview_colour_text = get_preview_colour_option('text', meta)
   local preview_colour_code = get_preview_colour_option('code', meta)
 
@@ -292,7 +292,7 @@ end
 --- Process string elements to add colour previews in text.
 --- @param element table Pandoc Str element.
 --- @return table|nil Modified pandoc element with colour preview, or original element.
-function process_str(element)
+local function process_str(element)
   if preview_colour_meta['text'] == false then
     return element
   end
@@ -303,7 +303,7 @@ end
 --- Process code elements to add colour previews.
 --- @param element table Pandoc Code element.
 --- @return table|nil Modified pandoc element with colour preview, or original element.
-function process_code(element)
+local function process_code(element)
   if preview_colour_meta['code'] == false then
     return element
   end
