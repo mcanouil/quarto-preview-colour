@@ -9,5 +9,5 @@ authors:
 repository-code: "https://github.com/mcanouil/quarto-preview-colour"
 url: "http://m.canouil.dev/quarto-preview-colour/"
 license: "MIT"
-date-released: "2025-10-16"
-version: 1.0.4
+date-released: "2025-10-25"
+version: 1.1.0
