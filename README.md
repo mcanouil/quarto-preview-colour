@@ -97,7 +97,7 @@ extensions:
 
 Here is the source code for a minimal example: [`example.qmd`](example.qmd).
 
-Outputs of `example.qmd`:
+Output of `example.qmd`:
 
 - [HTML](https://m.canouil.dev/quarto-preview-colour/)
 - [Typst/PDF](https://m.canouil.dev/quarto-preview-colour/preview-colour-typst.pdf)
