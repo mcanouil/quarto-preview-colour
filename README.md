@@ -19,8 +19,6 @@ If you're using version control, you will want to check in this directory.
 
 ### Basic Setup
 
-Add the extension to your document's YAML front matter:
-
 To activate the filter, add the following to your YAML front matter:
 
 - Old (<1.8.21):
