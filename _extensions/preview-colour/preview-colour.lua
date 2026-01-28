@@ -98,59 +98,32 @@ local latex_glyph_commands = {
   "diamond", "bigcirc", "square", "blacksquare", "triangleright"
 }
 
---- Check and escape LaTeX commands in glyph string.
---- Detects unescaped LaTeX commands (single backslash) and escapes them.
---- Also detects when backslash was lost (e.g., \t interpreted as tab).
+--- Fix LaTeX glyph when backslash was interpreted as escape sequence.
+--- Detects when \t was interpreted as tab and fixes it.
 --- @param glyph string The glyph string to check.
---- @return string The glyph with properly escaped LaTeX commands.
-local function escape_latex_glyph(glyph)
+--- @return string The glyph with fixed LaTeX command.
+local function fix_latex_glyph(glyph)
   if glyph == nil or glyph == "" then
     return glyph
   end
 
-  -- Debug: log the actual bytes received
-  local bytes = {}
-  for i = 1, math.min(#glyph, 4) do
-    table.insert(bytes, string.byte(glyph, i))
-  end
-  quarto.log.output("[preview-colour] DEBUG glyph bytes: " .. table.concat(bytes, ", ") .. " (length: " .. #glyph .. ")")
-
-  -- Early exit: if starts with two backslashes (byte 92), already escaped
-  if string.byte(glyph, 1) == 92 and string.byte(glyph, 2) == 92 then
-    return glyph
-  end
-
   -- Check if backslash was lost (e.g., \textbullet became [TAB]extbullet)
-  -- by looking for known command names preceded by a tab
+  -- This happens when YAML interprets \t as a tab character
   for _, cmd in ipairs(latex_glyph_commands) do
     -- Check if string starts with tab + rest of command (backslash interpreted as \t)
     local tab_pattern = "\t" .. string.sub(cmd, 2)
     if string.sub(glyph, 1, #tab_pattern) == tab_pattern then
-      local escaped = "\\\\" .. cmd
+      local fixed = "\\" .. cmd
       if not latex_escape_warning_shown then
         utils.log_warning(
           EXTENSION_NAME,
-          'LaTeX glyph backslash was interpreted as escape sequence. ' ..
-          'Automatically fixed. In YAML, use: \'\\\\' .. cmd .. '\''
+          'LaTeX glyph backslash was interpreted as tab. ' ..
+          'Automatically fixed. In YAML, use single-quoted string: \'\\\\' .. cmd .. '\''
         )
         latex_escape_warning_shown = true
       end
-      return escaped
+      return fixed
     end
-  end
-
-  -- Check if starts with single backslash (needs escaping)
-  if string.sub(glyph, 1, 1) == "\\" then
-    local escaped = "\\" .. glyph
-    if not latex_escape_warning_shown then
-      utils.log_warning(
-        EXTENSION_NAME,
-        'LaTeX glyph contains unescaped backslash. ' ..
-        'Automatically escaped. In YAML, use double backslash: \'\\\\textbullet\''
-      )
-      latex_escape_warning_shown = true
-    end
-    return escaped
   end
 
   return glyph
@@ -205,7 +178,7 @@ local function get_glyph_for_format(format)
 
   -- For LaTeX format, check for unescaped commands and escape them
   if format == "latex" then
-    glyph = escape_latex_glyph(glyph)
+    glyph = fix_latex_glyph(glyph)
   end
 
   return glyph
