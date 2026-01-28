@@ -108,8 +108,15 @@ local function escape_latex_glyph(glyph)
     return glyph
   end
 
-  -- Early exit: if starts with two backslashes, already escaped
-  if string.sub(glyph, 1, 2) == "\\\\" then
+  -- Debug: log the actual bytes received
+  local bytes = {}
+  for i = 1, math.min(#glyph, 4) do
+    table.insert(bytes, string.byte(glyph, i))
+  end
+  quarto.log.output("[preview-colour] DEBUG glyph bytes: " .. table.concat(bytes, ", ") .. " (length: " .. #glyph .. ")")
+
+  -- Early exit: if starts with two backslashes (byte 92), already escaped
+  if string.byte(glyph, 1) == 92 and string.byte(glyph, 2) == 92 then
     return glyph
   end
 
