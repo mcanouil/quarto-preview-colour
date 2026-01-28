@@ -79,7 +79,7 @@ extensions:
     glyph:
       default: "●"
       html: "&#9632;"
-      latex: "\\bullet"
+      latex: '\textbullet'
       typst: "◆"
       docx: "◉"
       pptx: "◉"
