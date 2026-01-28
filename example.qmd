@@ -69,8 +69,10 @@ filters:
 # New recommended configuration:
 extensions:
   preview-colour:
-    code: true
     text: true
+    code:
+      inline: true
+      block: true
     glyph:
       default: "●"
       html: "&#9673;"
@@ -145,3 +147,43 @@ extensions:
 ### ✅ Mixed Formats
 
 - ✅ **code**: `["#FF0000", "rgb(0, 255, 0)"]`
+
+## Code Blocks (HTML only)
+
+Fenced code blocks with `code.block: true` (HTML output only).
+
+### CSS Example
+
+```css
+:root {
+  --primary: #3498DB;
+  --secondary: #2ECC71;
+  --danger: #E74C3C;
+  --warning: #F39C12;
+}
+
+body {
+  background-color: #FFFFFF;
+  color: #333333;
+}
+```
+
+### R Example
+
+```r
+colours <- c(
+  main = "#FF0000",
+  secondary = "#00FF00",
+  accent = "#0000FF"
+)
+
+ggplot(data) +
+  scale_fill_manual(values = c("A" = "#E74C3C", "B" = "#3498DB"))
+```
+
+### Named Colours in Code Blocks
+
+```text
+Common colours: red, green, blue, orange, purple
+Extended: rebeccapurple, cornflowerblue, darkolivegreen
+```

@@ -1,7 +1,7 @@
 # Preview Colour Extension For Quarto
 
-`preview-colour` is a [Quarto](https://quarto.org) extension that automatically renders colour previews for inline colour codes in both inline code blocks and regular text.
-It supports multiple colour formats including hex, RGB, HSL, and HWB values.
+`preview-colour` is a [Quarto](https://quarto.org) extension that automatically renders colour previews for colour codes in inline code, regular text, and fenced code blocks.
+It supports multiple colour formats including hex, RGB, HSL, HWB, and CSS named colours.
 It supports rendering in various output formats such as HTML, Reveal.js, PDF (via LaTeX), Beamer (LaTeX), Typst, Word, and PowerPoint.
 
 ## Installation
@@ -61,9 +61,17 @@ Configure which elements should show colour previews:
 ```yaml
 extensions:
   preview-colour:
-    code: true # Enable previews for inline code
     text: false # Enable previews for regular text
+    code:
+      inline: true # Enable previews for inline code (`#FF0000`)
+      block: false # Enable previews for fenced code blocks (HTML only)
 ```
+
+For backwards compatibility, `code: true` is equivalent to `code.inline: true` with `code.block: false`.
+
+> [!NOTE]
+> Code block support (`code.block: true`) is currently only available for HTML output.
+> It may conflict with syntax highlighting in some cases.
 
 ### Custom Glyph
 

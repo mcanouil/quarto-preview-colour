@@ -34,10 +34,13 @@ local colour = require(quarto.utils.resolve_path("_modules/colour.lua"):gsub("%.
 local deprecation_warning_shown = false
 
 --- Default configuration for preview colour features.
---- @type table<string, boolean>
+--- @type table<string, any>
 local preview_colour_meta = {
   ["text"] = false,
-  ["code"] = true
+  ["code"] = {
+    ["inline"] = true,
+    ["block"] = false
+  }
 }
 
 --- Default glyphs for each output format.
@@ -515,12 +518,59 @@ local function add_colour_mark(element)
   return element
 end
 
+--- Parse code configuration which can be boolean or table with inline/block keys.
+--- @param code_config any The code configuration value from metadata.
+--- @return table Table with inline and block boolean keys.
+local function parse_code_config(code_config)
+  -- Default values
+  local result = {
+    ["inline"] = true,
+    ["block"] = false
+  }
+
+  if code_config == nil then
+    return result
+  end
+
+  -- Handle boolean (backwards compatibility): code: true/false
+  if type(code_config) == "boolean" then
+    result["inline"] = code_config
+    result["block"] = false
+    return result
+  end
+
+  -- Handle table: code: { inline: true, block: false }
+  if type(code_config) == "table" then
+    -- Check for inline key
+    if code_config['inline'] ~= nil then
+      local inline_val = code_config['inline']
+      if type(inline_val) == "boolean" then
+        result["inline"] = inline_val
+      else
+        result["inline"] = utils.stringify(inline_val) ~= "false"
+      end
+    end
+    -- Check for block key
+    if code_config['block'] ~= nil then
+      local block_val = code_config['block']
+      if type(block_val) == "boolean" then
+        result["block"] = block_val
+      else
+        result["block"] = utils.stringify(block_val) == "true"
+      end
+    end
+  end
+
+  return result
+end
+
 --- Extract and configure colour preview settings from document metadata.
 --- @param meta table<string, any> Document metadata table.
 --- @return table<string, any> Updated metadata table with preview-colour configuration.
 local function get_colour_preview_meta(meta)
   local preview_colour_text = get_preview_colour_option('text', meta)
-  local preview_colour_code = get_preview_colour_option('code', meta)
+  local preview_colour_code_raw = get_preview_colour_option('code', meta)
+  local preview_colour_code = parse_code_config(preview_colour_code_raw)
 
   -- Get glyph configuration (can be string or table)
   -- Note: Do NOT use utils.get_metadata_value here as it stringifies the result,
@@ -567,11 +617,16 @@ local function process_str(element)
   return add_colour_mark(element)
 end
 
---- Process code elements to add colour previews.
+--- Process inline code elements to add colour previews.
 --- @param element table Pandoc Code element.
 --- @return table|nil Modified pandoc element with colour preview, or original element.
 local function process_code(element)
-  if preview_colour_meta['code'] == false then
+  local code_config = preview_colour_meta['code']
+  if type(code_config) == "table" then
+    if code_config['inline'] == false then
+      return element
+    end
+  elseif code_config == false then
     return element
   end
 
@@ -720,6 +775,91 @@ local function process_inlines(inlines)
   return result
 end
 
+--- Reconstruct a CodeBlock element with colour marks inserted after each colour.
+--- Only supported for HTML format currently.
+--- @param element table Pandoc CodeBlock element.
+--- @param matches table Array of colour matches with positions.
+--- @param language string Language for RawBlock.
+--- @param glyph string Glyph character to use for the preview.
+--- @return table Pandoc RawBlock with code and embedded colour marks.
+local function reconstruct_code_block_with_marks(element, matches, language, glyph)
+  if #matches == 0 then
+    return element
+  end
+
+  local text = element.text
+  local result_text = ""
+  local last_pos = 1
+
+  -- Build the content with embedded colour marks
+  for _, match in ipairs(matches) do
+    -- Add text before this colour
+    if match.start_pos > last_pos then
+      local prefix = string.sub(text, last_pos, match.start_pos - 1)
+      prefix = escape_html(prefix)
+      result_text = result_text .. prefix
+    end
+
+    -- Add the colour code (escaped)
+    local colour_text = escape_html(match.original)
+    result_text = result_text .. colour_text
+
+    -- Add the colour mark
+    result_text = result_text .. create_colour_mark(match.hex, "html", glyph)
+
+    last_pos = match.end_pos + 1
+  end
+
+  -- Add remaining text after last colour
+  if last_pos <= #text then
+    local suffix = string.sub(text, last_pos)
+    suffix = escape_html(suffix)
+    result_text = result_text .. suffix
+  end
+
+  -- Get classes for styling
+  local classes = element.attr.classes or {}
+  local class_str = ""
+  if #classes > 0 then
+    class_str = ' class="' .. table.concat(classes, " ") .. '"'
+  end
+
+  -- Wrap in pre/code tags
+  local html = '<pre' .. class_str .. '><code>' .. result_text .. '</code></pre>'
+
+  return pandoc.RawBlock(language, html)
+end
+
+--- Process code block elements to add colour previews.
+--- @param element table Pandoc CodeBlock element.
+--- @return table|nil Modified pandoc element with colour preview, or original element.
+local function process_code_block(element)
+  local code_config = preview_colour_meta['code']
+  if type(code_config) == "table" then
+    if code_config['block'] ~= true then
+      return element
+    end
+  else
+    -- If code config is not a table (backwards compat), block is disabled
+    return element
+  end
+
+  local format, language = utils.get_quarto_format()
+
+  -- Only HTML is supported for code blocks currently
+  if format ~= "html" then
+    return element
+  end
+
+  local matches = get_all_colours(element)
+  if #matches == 0 then
+    return element
+  end
+
+  local glyph = get_glyph_for_format(format)
+  return reconstruct_code_block_with_marks(element, matches, language, glyph)
+end
+
 --- Pandoc filter configuration.
 --- Defines the processing pipeline for different pandoc elements.
 --- @return table Filter table for Pandoc.
@@ -727,5 +867,6 @@ return {
   { Meta = get_colour_preview_meta },
   { Inlines = process_inlines }, -- Process multi-token colours first
   { Str = process_str },
-  { Code = process_code }
+  { Code = process_code },
+  { CodeBlock = process_code_block }
 }
