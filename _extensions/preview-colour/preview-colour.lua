@@ -96,18 +96,19 @@ local function escape_latex_glyph(glyph)
     return glyph
   end
 
-  -- Check if already properly escaped (starts with \\)
-  if string.sub(glyph, 1, 2) == "\\\\" then
+  -- Check if already properly escaped (contains \\)
+  if string.find(glyph, "\\\\", 1, true) then
     return glyph
   end
 
-  -- Check if it's a LaTeX command (starts with single \)
-  if string.sub(glyph, 1, 1) == "\\" then
-    local escaped = "\\" .. glyph
+  -- Check if it contains a backslash that needs escaping
+  if string.find(glyph, "\\", 1, true) then
+    -- Double all backslashes
+    local escaped = string.gsub(glyph, "\\", "\\\\")
     utils.log_warning(
       EXTENSION_NAME,
       'LaTeX glyph contains unescaped backslash. ' ..
-      'Automatically escaped. In YAML, use: "\\\\textbullet" or \'\\\\textbullet\''
+      'Automatically escaped. In YAML, use: "\\\\\\\\textbullet" or \'\\\\textbullet\''
     )
     return escaped
   end
