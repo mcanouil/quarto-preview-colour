@@ -214,36 +214,64 @@ local function get_all_colours(element)
   return matches
 end
 
+--- Escape HTML special characters in text.
+--- @param text string Text to escape.
+--- @return string Escaped text safe for HTML.
+local function escape_html(text)
+  local replacements = {
+    ['&'] = '&amp;',
+    ['<'] = '&lt;',
+    ['>'] = '&gt;',
+    ['"'] = '&quot;',
+    ["'"] = '&#39;'
+  }
+  return (text:gsub('[&<>"\']', replacements))
+end
+
 --- Reconstruct a Code element with colour marks inserted after each colour.
+--- Keeps the code as a single visual unit with marks embedded inside.
 --- @param element table Pandoc Code element.
 --- @param matches table Array of colour matches with positions.
 --- @param format string Output format (html, latex, typst, docx, pptx).
 --- @param language string Language for RawInline.
---- @return table Pandoc Span containing Code and RawInline elements.
+--- @return table Pandoc RawInline with code and embedded colour marks.
 local function reconstruct_code_with_marks(element, matches, format, language)
   if #matches == 0 then
     return element
   end
 
   local text = element.text
-  local result = {}
+  local result_text = ""
   local last_pos = 1
 
+  -- Build the content with embedded colour marks
   for _, match in ipairs(matches) do
-    -- Add text before this colour (if any)
+    -- Add text before this colour
     if match.start_pos > last_pos then
       local prefix = string.sub(text, last_pos, match.start_pos - 1)
-      if #prefix > 0 then
-        table.insert(result, pandoc.Code(prefix, element.attr))
+      if format == "html" then
+        prefix = escape_html(prefix)
+      elseif format == "latex" then
+        prefix = utils.escape_text(prefix, format)
+      elseif format == "typst" then
+        prefix = utils.escape_text(prefix, format)
       end
+      result_text = result_text .. prefix
     end
 
     -- Add the colour code
-    table.insert(result, pandoc.Code(match.original, element.attr))
+    local colour_text = match.original
+    if format == "html" then
+      colour_text = escape_html(colour_text)
+    elseif format == "latex" then
+      colour_text = utils.escape_text(colour_text, format)
+    elseif format == "typst" then
+      colour_text = utils.escape_text(colour_text, format)
+    end
+    result_text = result_text .. colour_text
 
     -- Add the colour mark
-    local colour_mark = create_colour_mark(match.hex, format)
-    table.insert(result, pandoc.RawInline(language, colour_mark))
+    result_text = result_text .. create_colour_mark(match.hex, format)
 
     last_pos = match.end_pos + 1
   end
@@ -251,11 +279,45 @@ local function reconstruct_code_with_marks(element, matches, format, language)
   -- Add remaining text after last colour
   if last_pos <= #text then
     local suffix = string.sub(text, last_pos)
+    if format == "html" then
+      suffix = escape_html(suffix)
+    elseif format == "latex" then
+      suffix = utils.escape_text(suffix, format)
+    elseif format == "typst" then
+      suffix = utils.escape_text(suffix, format)
+    end
+    result_text = result_text .. suffix
+  end
+
+  -- Wrap in format-specific code markup
+  if format == "html" then
+    return pandoc.RawInline(language, '<code>' .. result_text .. '</code>')
+  elseif format == "latex" then
+    return pandoc.RawInline(language, '\\texttt{' .. result_text .. '}')
+  end
+
+  -- For Typst and OpenXML, keep the split approach as they have limitations
+  -- with embedding marks inside code content
+  local result = {}
+  last_pos = 1
+  for _, match in ipairs(matches) do
+    if match.start_pos > last_pos then
+      local prefix = string.sub(text, last_pos, match.start_pos - 1)
+      if #prefix > 0 then
+        table.insert(result, pandoc.Code(prefix, element.attr))
+      end
+    end
+    table.insert(result, pandoc.Code(match.original, element.attr))
+    local colour_mark = create_colour_mark(match.hex, format)
+    table.insert(result, pandoc.RawInline(language, colour_mark))
+    last_pos = match.end_pos + 1
+  end
+  if last_pos <= #text then
+    local suffix = string.sub(text, last_pos)
     if #suffix > 0 then
       table.insert(result, pandoc.Code(suffix, element.attr))
     end
   end
-
   return pandoc.Span(result)
 end
 
