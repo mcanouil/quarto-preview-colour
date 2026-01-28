@@ -63,6 +63,38 @@ extensions:
     text: false   # Enable previews for regular text
 ```
 
+### Custom Glyph
+
+Customise the glyph symbol used for colour previews:
+
+```yaml
+# Simple: single glyph for all formats
+extensions:
+  preview-colour:
+    glyph: "●"
+
+# Advanced: per-format glyphs
+extensions:
+  preview-colour:
+    glyph:
+      default: "●"
+      html: "&#9632;"
+      latex: "\\bullet"
+      typst: "◆"
+      docx: "◉"
+      pptx: "◉"
+```
+
+Default glyphs when not customised:
+
+| Format | Glyph         | Description             |
+| ------ | ------------- | ----------------------- |
+| HTML   | `&#9673;`     | Fisheye (hollow circle) |
+| LaTeX  | `\textbullet` | Bullet point            |
+| Typst  | `◉`           | Fisheye                 |
+| DOCX   | `●`           | Black circle            |
+| PPTX   | `●`           | Black circle            |
+
 ## Supported Colour Formats
 
 - ❌ Names one: `orange` (*will probably never be supported*)
