@@ -82,7 +82,7 @@ end
 --- @param hex string Hex colour code.
 --- @return string HTML colour preview mark.
 local function create_html_colour_mark(hex)
-  return '<span style="display: inline-block; color: ' ..
+  return '<span style="font-size: 1.2rem; color: ' ..
       hex ..
       '; cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; position: relative;" title="Colour preview: ' ..
       hex ..
@@ -147,124 +147,269 @@ local function create_colour_mark(hex, format)
   end
 end
 
---- Extract colour information from a pandoc element.
+--- Extract all colour matches from element text with positions.
+--- Supports multiple colours and colours embedded within other text.
 --- @param element table Pandoc element containing text to analyse.
---- @return string|nil Extracted hex colour code or nil if no colour found.
---- @return string|nil Original colour text that was matched.
-local function get_colour(element)
-  --- Generate hex colour pattern for matching.
-  --- @param n number Number of hex characters to match.
-  --- @return string Lua pattern for matching hex colours.
-  local function get_hex_colour(n)
-    return '#' .. string.rep('[0-9a-fA-F]', n)
-  end
-
-  local hex6 = element.text:match(get_hex_colour(6))
+--- @return table Array of match objects sorted by start position.
+---         Each match: { hex = "#RRGGBB", original = "...", start_pos = n, end_pos = m, format = "hex6" }
+local function get_all_colours(element)
   local matches = {}
-  if hex6 then
-    for match in string.gmatch(element.text, get_hex_colour(6)) do
-      table.insert(matches, { name = 'hex6', value = match })
-    end
-  else
-    local hex3 = element.text:match(get_hex_colour(3))
-    if hex3 then
-      for match in string.gmatch(element.text, get_hex_colour(3)) do
-        table.insert(matches, { name = 'hex3', value = match })
-      end
-    end
-  end
-  -- Now check other patterns (skip hex6/hex3).
+  local text = element.text
+
+  -- Pattern definitions with priority (hex6 before hex3 to avoid partial matches)
   local patterns = {
+    { name = 'hex6',        pattern = '#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]' },
     { name = 'rgb',         pattern = 'rgb%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%)' },
     { name = 'rgb_percent', pattern = 'rgb%s*%(%s*%d+%s*%%%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*%)' },
     { name = 'hsl',         pattern = 'hsl%s*%(%s*%d+%s*,%s*%d+%s*%%,%s*%d+%s*%%s*%)' },
-    { name = 'hwb',         pattern = 'hwb%s*%(%s*%d+%s+%d+%%%s+%d+%%%s*%)' }
+    { name = 'hwb',         pattern = 'hwb%s*%(%s*%d+%s+%d+%%%s+%d+%%%s*%)' },
+    { name = 'hex3',        pattern = '#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]' } -- Last to avoid false positives
   }
+
+  -- Track covered positions to prevent overlaps
+  local covered = {}
+
+  --- Check if a position range overlaps with any covered range.
+  --- @param start_pos number Start position to check.
+  --- @param end_pos number End position to check.
+  --- @return boolean True if position overlaps with a covered range.
+  local function is_position_covered(start_pos, end_pos)
+    for _, range in ipairs(covered) do
+      if (start_pos >= range[1] and start_pos <= range[2]) or
+          (end_pos >= range[1] and end_pos <= range[2]) or
+          (start_pos <= range[1] and end_pos >= range[2]) then
+        return true
+      end
+    end
+    return false
+  end
+
   for _, pat in ipairs(patterns) do
-    for match in string.gmatch(element.text, pat.pattern) do
-      table.insert(matches, { name = pat.name, value = match })
+    local pos = 1
+    while pos <= #text do
+      local start_pos, end_pos = string.find(text, pat.pattern, pos)
+      if not start_pos then break end
+
+      -- Check if position is already covered by a previous match
+      if not is_position_covered(start_pos, end_pos) then
+        local matched_text = string.sub(text, start_pos, end_pos)
+        local hex = colour.to_html(matched_text, pat.name)
+        table.insert(matches, {
+          hex = hex,
+          original = matched_text,
+          start_pos = start_pos,
+          end_pos = end_pos,
+          format = pat.name
+        })
+        table.insert(covered, { start_pos, end_pos })
+      end
+
+      pos = end_pos + 1
     end
   end
 
-  local hex = nil
-  local original_colour_text = nil
-  if #matches > 1 then
-    utils.log_warning(
-      EXTENSION_NAME,
-      'Multiple colour matches found in text: "' .. utils.stringify(element.text) .. '". ' ..
-      'No colour preview will be generated.'
-    )
-    return nil, nil -- More than one colour match found, return nil.
+  -- Sort by start position for sequential processing
+  table.sort(matches, function(a, b) return a.start_pos < b.start_pos end)
+
+  return matches
+end
+
+--- Escape HTML special characters in text.
+--- @param text string Text to escape.
+--- @return string Escaped text safe for HTML.
+local function escape_html(text)
+  local replacements = {
+    ['&'] = '&amp;',
+    ['<'] = '&lt;',
+    ['>'] = '&gt;',
+    ['"'] = '&quot;',
+    ["'"] = '&#39;'
+  }
+  return (text:gsub('[&<>"\']', replacements))
+end
+
+--- Reconstruct a Code element with colour marks inserted after each colour.
+--- Keeps the code as a single visual unit with marks embedded inside.
+--- @param element table Pandoc Code element.
+--- @param matches table Array of colour matches with positions.
+--- @param format string Output format (html, latex, typst, docx, pptx).
+--- @param language string Language for RawInline.
+--- @return table Pandoc RawInline with code and embedded colour marks.
+local function reconstruct_code_with_marks(element, matches, format, language)
+  if #matches == 0 then
+    return element
   end
+
+  local text = element.text
+  local result_text = ""
+  local last_pos = 1
+
+  -- Build the content with embedded colour marks
+  for _, match in ipairs(matches) do
+    -- Add text before this colour
+    if match.start_pos > last_pos then
+      local prefix = string.sub(text, last_pos, match.start_pos - 1)
+      if format == "html" then
+        prefix = escape_html(prefix)
+      elseif format == "latex" then
+        prefix = utils.escape_text(prefix, format)
+      elseif format == "typst" then
+        prefix = utils.escape_text(prefix, format)
+      end
+      result_text = result_text .. prefix
+    end
+
+    -- Add the colour code
+    local colour_text = match.original
+    if format == "html" then
+      colour_text = escape_html(colour_text)
+    elseif format == "latex" then
+      colour_text = utils.escape_text(colour_text, format)
+    elseif format == "typst" then
+      colour_text = utils.escape_text(colour_text, format)
+    end
+    result_text = result_text .. colour_text
+
+    -- Add the colour mark
+    result_text = result_text .. create_colour_mark(match.hex, format)
+
+    last_pos = match.end_pos + 1
+  end
+
+  -- Add remaining text after last colour
+  if last_pos <= #text then
+    local suffix = string.sub(text, last_pos)
+    if format == "html" then
+      suffix = escape_html(suffix)
+    elseif format == "latex" then
+      suffix = utils.escape_text(suffix, format)
+    elseif format == "typst" then
+      suffix = utils.escape_text(suffix, format)
+    end
+    result_text = result_text .. suffix
+  end
+
+  -- Wrap in format-specific code markup
+  if format == "html" then
+    return pandoc.RawInline(language, '<code>' .. result_text .. '</code>')
+  elseif format == "latex" then
+    return pandoc.RawInline(language, '\\texttt{' .. result_text .. '}')
+  end
+
+  -- For Typst and OpenXML, keep the split approach as they have limitations
+  -- with embedding marks inside code content
+  local result = {}
+  last_pos = 1
+  for _, match in ipairs(matches) do
+    if match.start_pos > last_pos then
+      local prefix = string.sub(text, last_pos, match.start_pos - 1)
+      if #prefix > 0 then
+        table.insert(result, pandoc.Code(prefix, element.attr))
+      end
+    end
+    table.insert(result, pandoc.Code(match.original, element.attr))
+    local colour_mark = create_colour_mark(match.hex, format)
+    table.insert(result, pandoc.RawInline(language, colour_mark))
+    last_pos = match.end_pos + 1
+  end
+  if last_pos <= #text then
+    local suffix = string.sub(text, last_pos)
+    if #suffix > 0 then
+      table.insert(result, pandoc.Code(suffix, element.attr))
+    end
+  end
+  return pandoc.Span(result)
+end
+
+--- Reconstruct a Str element with colour marks inserted after each colour.
+--- @param element table Pandoc Str element.
+--- @param matches table Array of colour matches with positions.
+--- @param format string Output format (html, latex, typst, docx, pptx).
+--- @param language string Language for RawInline.
+--- @return table Pandoc Span or RawInline depending on format.
+local function reconstruct_str_with_marks(element, matches, format, language)
+  if #matches == 0 then
+    return element
+  end
+
+  local text = element.text
+
+  -- For OpenXML formats, use Span with separate elements
+  if language == "openxml" then
+    local result = {}
+    local last_pos = 1
+
+    for _, match in ipairs(matches) do
+      if match.start_pos > last_pos then
+        local prefix = string.sub(text, last_pos, match.start_pos - 1)
+        if #prefix > 0 then
+          table.insert(result, pandoc.Str(prefix))
+        end
+      end
+
+      table.insert(result, pandoc.Str(match.original))
+      local colour_mark = create_colour_mark(match.hex, format)
+      table.insert(result, pandoc.RawInline(language, colour_mark))
+
+      last_pos = match.end_pos + 1
+    end
+
+    if last_pos <= #text then
+      local suffix = string.sub(text, last_pos)
+      if #suffix > 0 then
+        table.insert(result, pandoc.Str(suffix))
+      end
+    end
+
+    return pandoc.Span(result)
+  end
+
+  -- For LaTeX/Typst/HTML, build a single raw inline with escaping
+  local result_text = ""
+  local last_pos = 1
 
   for _, match in ipairs(matches) do
-    original_colour_text = match.value
-    hex = colour.to_html(match.value, match.name)
-  end
-
-  -- Check if the matched colour text is the entire element text.
-  -- This prevents partial matches from being considered valid.
-  -- https://github.com/mcanouil/quarto-preview-colour/issues/24
-  if #matches == 1 and #matches[1].value ~= #element.text then
-    return nil, nil
-  end
-
-  return hex, original_colour_text
-end
-
---- Process text replacement for string elements with colour previews.
---- @param element table Pandoc element containing text.
---- @param format string Output format name.
---- @param colour_mark string Colour preview mark for the format.
---- @param original_colour_text string|nil Original colour text found in element.
---- @return table Modified pandoc element.
-local function process_element(element, format, colour_mark, original_colour_text)
-  if element.t ~= "Str" and element.t ~= "Code" then
-    return element -- Return original element if not a Str or Code.
-  end
-
-  if element.t == "Code" and colour_mark ~= nil then
-    return pandoc.Span({ element, pandoc.RawInline(format, colour_mark) })
-  end
-
-  if element.t == "Str" and original_colour_text ~= nil and colour_mark ~= nil then
-    -- For OpenXML formats (DOCX/PPTX), we need to return a Span with separate elements.
-    if format == "openxml" then
-      local escaped_pattern = utils.escape_text(original_colour_text, "lua")
-      local escaped_replacement = string.gsub(original_colour_text, "%%", "%%%%")
-      local new_text = string.gsub(element.text, escaped_pattern, escaped_replacement)
-      return pandoc.Span({
-        pandoc.Str(new_text),
-        pandoc.RawInline(format, colour_mark)
-      })
+    if match.start_pos > last_pos then
+      local prefix = string.sub(text, last_pos, match.start_pos - 1)
+      if format == "latex" or format == "typst" then
+        prefix = utils.escape_text(prefix, format)
+      end
+      result_text = result_text .. prefix
     end
 
-    -- For other formats (LaTeX, Typst), use the existing concatenation approach.
-    local escaped_original = original_colour_text
+    local colour_text = match.original
     if format == "latex" or format == "typst" then
-      escaped_original = utils.escape_text(original_colour_text, format)
+      colour_text = utils.escape_text(colour_text, format)
     end
+    result_text = result_text .. colour_text
+    result_text = result_text .. create_colour_mark(match.hex, format)
 
-    local escaped_pattern = utils.escape_text(original_colour_text, "lua")
-    local escaped_colour_mark = string.gsub(colour_mark, "%%", "%%%%")
-    local escaped_replacement = string.gsub(escaped_original, "%%", "%%%%") .. escaped_colour_mark
-    local new_text = string.gsub(element.text, escaped_pattern, escaped_replacement)
-
-    return pandoc.RawInline(format, new_text)
+    last_pos = match.end_pos + 1
   end
 
-  return element
+  if last_pos <= #text then
+    local suffix = string.sub(text, last_pos)
+    if format == "latex" or format == "typst" then
+      suffix = utils.escape_text(suffix, format)
+    end
+    result_text = result_text .. suffix
+  end
+
+  return pandoc.RawInline(language, result_text)
 end
 
---- Add a colour preview mark to a Pandoc element if a valid colour is found.
---- Handles multiple output formats (HTML, LaTeX, Typst, DOCX, PPTX).
+--- Add colour preview marks to a Pandoc element.
+--- Handles multiple colours and colours embedded within other text.
+--- Supports multiple output formats (HTML, LaTeX, Typst, DOCX, PPTX).
 --- @param element table Pandoc Str or Code element to process.
---- @return table Pandoc element (Str, Code, RawInline, or Span) with colour preview if a valid colour is found, otherwise the original element.
+--- @return table Pandoc element with colour previews, or original element if no colours found.
 local function add_colour_mark(element)
-  local hex, original_colour_text = get_colour(element)
-  if hex == nil then
-    return element -- No valid colour found, return original element.
+  local matches = get_all_colours(element)
+
+  if #matches == 0 then
+    return element -- No colours found, return original element.
   end
+
   local format, language = utils.get_quarto_format()
   if format == "unknown" then
     utils.log_warning(
@@ -274,7 +419,14 @@ local function add_colour_mark(element)
     )
     return element -- Unsupported format, return original element.
   end
-  return process_element(element, language, create_colour_mark(hex, format), original_colour_text)
+
+  if element.t == "Code" then
+    return reconstruct_code_with_marks(element, matches, format, language)
+  elseif element.t == "Str" then
+    return reconstruct_str_with_marks(element, matches, format, language)
+  end
+
+  return element
 end
 
 --- Extract and configure colour preview settings from document metadata.

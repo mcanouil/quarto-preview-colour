@@ -114,3 +114,21 @@ extensions:
 - ✅ **code** (no space): `hsl(240,100%,50%)`
 - ❌ **text**: hsl(240, 100%, 50%)
 - ✅ **text** (no space): hsl(240,100%,50%)
+
+## Multiple and Embedded Colours
+
+### ✅ Multiple Colours (Inline)
+
+- ✅ **code**: `["#FF0000", "#00FF00", "#0000FF"]`
+- ✅ **code**: `#FF0000 #00FF00 #0000FF`
+- ✅ **code**: `colors: ["#E74C3C", "#3498DB", "#2ECC71", "#F39C12"]`
+
+### ✅ Embedded Colours (in Code)
+
+- ✅ **code**: `my_scale <- list(scale_colour_manual(values = c("Adelie" = "#0A64C8")))`{.r}
+- ✅ **code**: `color1 = "#FF5733"; color2 = "#33FF57"`{.python}
+- ✅ **code**: `background-color: #282c34;`{.css}
+
+### ✅ Mixed Formats
+
+- ✅ **code**: `["#FF0000", "rgb(0, 255, 0)"]`
