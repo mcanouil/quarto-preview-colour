@@ -37,19 +37,21 @@ To activate the filter, add the following to your YAML front matter:
       at: post-quarto
   ```
 
-````qmd
+```qmd
 - code: `#441100` or `rgb(10, 100, 200)`
 - text: #441100 or rgb(10,100,200)
-````
+```
 
 > [!NOTE]
 > Colour codes should be placed in inline code blocks (alone) or regular text.
 >
 > ❌ Invalid:
+>
 > - `` `"My colour is #441100"` ``
 > - `` `["#441100", "#114400"]` ``
 >
 > ✅ Valid:
+>
 > - `` `#441100` ``
 
 ### Configuration Options
@@ -59,8 +61,8 @@ Configure which elements should show colour previews:
 ```yaml
 extensions:
   preview-colour:
-    code: true    # Enable previews for inline code
-    text: false   # Enable previews for regular text
+    code: true # Enable previews for inline code
+    text: false # Enable previews for regular text
 ```
 
 ### Custom Glyph
@@ -79,7 +81,7 @@ extensions:
     glyph:
       default: "●"
       html: "&#9632;"
-      latex: '\\textbullet'
+      latex: '\\textbullet' # Important: Single quotes and LaTeX escape
       typst: "◆"
       docx: "◉"
       pptx: "◉"
@@ -97,7 +99,7 @@ Default glyphs when not customised:
 
 ## Supported Colour Formats
 
-- ❌ Names one: `orange` (*will probably never be supported*)
+- ❌ Names one: `orange` (_will probably never be supported_)
 - ✅ hex codes:
   - ✅ **code**: `#441100`
   - ✅ **text**: #441100
