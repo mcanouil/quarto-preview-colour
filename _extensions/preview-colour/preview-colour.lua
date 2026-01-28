@@ -98,18 +98,33 @@ local function get_glyph_for_format(format)
     return default_glyphs[format] or default_glyphs["html"]
   end
 
-  -- Handle string configuration (single glyph for all formats)
-  if type(glyph_config) == "string" then
-    return glyph_config
+  -- In Pandoc Lua, metadata values are never plain strings.
+  -- Simple string config (glyph: "●") becomes MetaInlines (table with numeric keys).
+  -- Per-format config (glyph: {html: "●"}) becomes MetaMap (table with string keys).
+  -- Check if it's a MetaMap by looking for string keys.
+  local is_format_table = false
+  if type(glyph_config) == "table" then
+    for k, _ in pairs(glyph_config) do
+      if type(k) == "string" then
+        is_format_table = true
+        break
+      end
+    end
   end
 
-  -- Handle table configuration (per-format glyphs)
-  if type(glyph_config) == "table" then
+  if is_format_table then
+    -- Per-format configuration (MetaMap)
     if glyph_config[format] then
       return utils.stringify(glyph_config[format])
     end
     if glyph_config["default"] then
       return utils.stringify(glyph_config["default"])
+    end
+  else
+    -- Simple string configuration (MetaInlines) or plain string
+    local glyph_str = utils.stringify(glyph_config)
+    if glyph_str and glyph_str ~= "" then
+      return glyph_str
     end
   end
 
@@ -490,9 +505,28 @@ local function get_colour_preview_meta(meta)
   local preview_colour_code = get_preview_colour_option('code', meta)
 
   -- Get glyph configuration (can be string or table)
-  local glyph_config = utils.get_metadata_value(meta, 'preview-colour', 'glyph')
-  if utils.is_empty(glyph_config) then
-    glyph_config = check_deprecated_config(meta, 'glyph')
+  -- Note: Do NOT use utils.get_metadata_value here as it stringifies the result,
+  -- which would concatenate all table values. We need the raw metadata object.
+  local glyph_config = nil
+  if meta['extensions'] and meta['extensions']['preview-colour'] and meta['extensions']['preview-colour']['glyph'] then
+    glyph_config = meta['extensions']['preview-colour']['glyph']
+  end
+  if glyph_config == nil then
+    -- Check deprecated top-level config
+    if meta['preview-colour'] and meta['preview-colour']['glyph'] then
+      glyph_config = meta['preview-colour']['glyph']
+      if not deprecation_warning_shown then
+        utils.log_warning(
+          EXTENSION_NAME,
+          'Top-level "preview-colour" configuration is deprecated. ' ..
+          'Please use:\n' ..
+          'extensions:\n' ..
+          '  preview-colour:\n' ..
+          '    glyph: value'
+        )
+        deprecation_warning_shown = true
+      end
+    end
   end
 
   meta['extensions']['preview-colour'] = {
