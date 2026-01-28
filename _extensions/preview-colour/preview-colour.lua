@@ -82,7 +82,7 @@ end
 --- @param hex string Hex colour code.
 --- @return string HTML colour preview mark.
 local function create_html_colour_mark(hex)
-  return '<span style="display: inline-block; color: ' ..
+  return '<span style="font-size: 1.2rem; color: ' ..
       hex ..
       '; cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; position: relative;" title="Colour preview: ' ..
       hex ..
