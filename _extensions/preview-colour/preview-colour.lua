@@ -137,7 +137,7 @@ end
 --- @param glyph string Glyph character to use for the preview.
 --- @return string HTML colour preview mark.
 local function create_html_colour_mark(hex, glyph)
-  return '<span style="font-size: 1.2rem; color: ' ..
+  return '<span style="font-size: 1lh; color: ' ..
       hex ..
       '; cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; position: relative;" title="Colour preview: ' ..
       hex ..
