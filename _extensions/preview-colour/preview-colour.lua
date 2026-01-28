@@ -40,6 +40,16 @@ local preview_colour_meta = {
   ["code"] = true
 }
 
+--- Default glyphs for each output format.
+--- @type table<string, string>
+local default_glyphs = {
+  ["html"] = "&#9673;",
+  ["latex"] = "\\textbullet",
+  ["typst"] = "◉",
+  ["docx"] = "●",
+  ["pptx"] = "●"
+}
+
 --- Check for deprecated top-level preview-colour configuration and emit warning if found.
 --- @param meta table<string, any> Document metadata table.
 --- @param key string The configuration key being accessed.
@@ -77,12 +87,63 @@ local function get_preview_colour_option(key, meta)
   return true -- fallback for any other keys
 end
 
+--- Get glyph for a specific output format.
+--- Checks user configuration and falls back to defaults.
+--- @param format string Output format (html, latex, typst, docx, pptx).
+--- @return string The glyph to use for the format.
+local function get_glyph_for_format(format)
+  local glyph_config = preview_colour_meta['glyph']
+
+  if glyph_config == nil then
+    return default_glyphs[format] or default_glyphs["html"]
+  end
+
+  -- In Pandoc Lua, metadata values are never plain strings.
+  -- Simple string config (glyph: "●") becomes MetaInlines (table with numeric keys).
+  -- Per-format config (glyph: {html: "●"}) becomes MetaMap (table with string keys).
+  -- Check if it's a MetaMap by looking for string keys.
+  local is_format_table = false
+  if type(glyph_config) == "table" then
+    for k, _ in pairs(glyph_config) do
+      if type(k) == "string" then
+        is_format_table = true
+        break
+      end
+    end
+  end
+
+  local glyph = nil
+
+  if is_format_table then
+    -- Per-format configuration (MetaMap)
+    if glyph_config[format] then
+      glyph = utils.stringify(glyph_config[format])
+    elseif glyph_config["default"] then
+      glyph = utils.stringify(glyph_config["default"])
+    end
+  else
+    -- Simple string configuration (MetaInlines) or plain string
+    local glyph_str = utils.stringify(glyph_config)
+    if glyph_str and glyph_str ~= "" then
+      glyph = glyph_str
+    end
+  end
+
+  -- Fall back to default if no glyph found
+  if glyph == nil then
+    return default_glyphs[format] or default_glyphs["html"]
+  end
+
+  return glyph
+end
+
 
 --- Create colour preview mark for HTML format.
 --- @param hex string Hex colour code.
+--- @param glyph string Glyph character to use for the preview.
 --- @return string HTML colour preview mark.
-local function create_html_colour_mark(hex)
-  return '<span style="font-size: 1.2rem; color: ' ..
+local function create_html_colour_mark(hex, glyph)
+  return '<span style="font-size: 1lh; font-family: system-ui, sans-serif; color: ' ..
       hex ..
       '; cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; position: relative;" title="Colour preview: ' ..
       hex ..
@@ -92,45 +153,54 @@ local function create_html_colour_mark(hex)
       hex ..
       '\').then(() => { const span = this; const originalTitle = span.title; span.title = \'Copied: ' ..
       hex ..
-      '\'; let tooltip = document.createElement(\'div\'); tooltip.textContent = \'Copied!\'; tooltip.style.cssText = \'position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:4px 8px;border-radius:4px;font-size:12px;font-family:sans-serif;white-space:nowrap;z-index:9999;box-shadow:0 2px 4px rgba(0,0,0,0.3);pointer-events:none;\'; span.appendChild(tooltip); setTimeout(() => { span.title = originalTitle; if (span.contains(tooltip)) span.removeChild(tooltip); }, 1500); }).catch(() => console.error(\'Failed to copy colour code\'));">&#9673;</span>'
+      '\'; let tooltip = document.createElement(\'div\'); tooltip.textContent = \'Copied!\'; tooltip.style.cssText = \'position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:4px 8px;border-radius:4px;font-size:12px;font-family:sans-serif;white-space:nowrap;z-index:9999;box-shadow:0 2px 4px rgba(0,0,0,0.3);pointer-events:none;\'; span.appendChild(tooltip); setTimeout(() => { span.title = originalTitle; if (span.contains(tooltip)) span.removeChild(tooltip); }, 1500); }).catch(() => console.error(\'Failed to copy colour code\'));">' .. glyph .. '</span>'
 end
 
 --- Create colour preview mark for LaTeX format.
 --- @param hex string Hex colour code.
+--- @param glyph string Glyph character to use for the preview.
 --- @return string LaTeX colour preview mark.
-local function create_latex_colour_mark(hex)
+local function create_latex_colour_mark(hex, glyph)
   local hex_colour_six = colour.expand_hex_colour(hex)
-  return "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{\\textbullet}"
+  return "\\textcolor[HTML]{" .. string.gsub(hex_colour_six, '#', '') .. "}{" .. glyph .. "}"
 end
 
 --- Create colour preview mark for Typst format.
 --- @param hex string Hex colour code.
+--- @param glyph string Glyph character to use for the preview.
 --- @return string Typst colour preview mark.
-local function create_typst_colour_mark(hex)
+local function create_typst_colour_mark(hex, glyph)
   local hex_colour_six = colour.expand_hex_colour(hex)
-  return '#text(fill: rgb("' .. string.lower(hex_colour_six) .. '"))[◉]'
+  return '#text(fill: rgb("' .. string.lower(hex_colour_six) .. '"))[' .. glyph .. ']'
 end
 
 --- Create colour preview mark for DOCX format using OpenXML.
 --- @param hex string Hex colour code.
+--- @param glyph string Glyph character to use for the preview.
 --- @return string DOCX colour preview mark using OpenXML.
-local function create_docx_colour_mark(hex)
+local function create_docx_colour_mark(hex, glyph)
   local hex_colour_six = colour.expand_hex_colour(hex)
   local hex_without_hash = string.gsub(hex_colour_six, '#', '')
-  return '<w:r><w:rPr><w:color w:val="' .. hex_without_hash .. '"/></w:rPr><w:t>●</w:t></w:r>'
+  return '<w:r><w:rPr><w:color w:val="' .. hex_without_hash .. '"/></w:rPr><w:t>' .. glyph .. '</w:t></w:r>'
 end
 
 --- Create colour preview mark for PPTX format using OpenXML.
 --- @param hex string Hex colour code.
+--- @param glyph string Glyph character to use for the preview.
 --- @return string PPTX colour preview mark using OpenXML.
-local function create_pptx_colour_mark(hex)
+local function create_pptx_colour_mark(hex, glyph)
   local hex_colour_six = colour.expand_hex_colour(hex)
   local hex_without_hash = string.gsub(hex_colour_six, '#', '')
   return '<a:r><a:rPr dirty="0"><a:solidFill><a:srgbClr val="' ..
-      hex_without_hash .. '" /></a:solidFill></a:rPr><a:t>●</a:t></a:r>'
+      hex_without_hash .. '" /></a:solidFill></a:rPr><a:t>' .. glyph .. '</a:t></a:r>'
 end
 
-local function create_colour_mark(hex, format)
+--- Create colour preview mark for the specified format.
+--- @param hex string Hex colour code.
+--- @param format string Output format (html, latex, typst, docx, pptx).
+--- @param glyph string Glyph character to use for the preview.
+--- @return string Colour preview mark for the format.
+local function create_colour_mark(hex, format, glyph)
   local colour_mark_functions = {
     html = create_html_colour_mark,
     latex = create_latex_colour_mark,
@@ -141,7 +211,7 @@ local function create_colour_mark(hex, format)
 
   local create_mark = colour_mark_functions[format]
   if create_mark then
-    return create_mark(hex)
+    return create_mark(hex, glyph)
   else
     error('Unsupported format: ' .. format)
   end
@@ -234,8 +304,9 @@ end
 --- @param matches table Array of colour matches with positions.
 --- @param format string Output format (html, latex, typst, docx, pptx).
 --- @param language string Language for RawInline.
+--- @param glyph string Glyph character to use for the preview.
 --- @return table Pandoc RawInline with code and embedded colour marks.
-local function reconstruct_code_with_marks(element, matches, format, language)
+local function reconstruct_code_with_marks(element, matches, format, language, glyph)
   if #matches == 0 then
     return element
   end
@@ -271,7 +342,7 @@ local function reconstruct_code_with_marks(element, matches, format, language)
     result_text = result_text .. colour_text
 
     -- Add the colour mark
-    result_text = result_text .. create_colour_mark(match.hex, format)
+    result_text = result_text .. create_colour_mark(match.hex, format, glyph)
 
     last_pos = match.end_pos + 1
   end
@@ -308,7 +379,7 @@ local function reconstruct_code_with_marks(element, matches, format, language)
       end
     end
     table.insert(result, pandoc.Code(match.original, element.attr))
-    local colour_mark = create_colour_mark(match.hex, format)
+    local colour_mark = create_colour_mark(match.hex, format, glyph)
     table.insert(result, pandoc.RawInline(language, colour_mark))
     last_pos = match.end_pos + 1
   end
@@ -326,8 +397,9 @@ end
 --- @param matches table Array of colour matches with positions.
 --- @param format string Output format (html, latex, typst, docx, pptx).
 --- @param language string Language for RawInline.
+--- @param glyph string Glyph character to use for the preview.
 --- @return table Pandoc Span or RawInline depending on format.
-local function reconstruct_str_with_marks(element, matches, format, language)
+local function reconstruct_str_with_marks(element, matches, format, language, glyph)
   if #matches == 0 then
     return element
   end
@@ -348,7 +420,7 @@ local function reconstruct_str_with_marks(element, matches, format, language)
       end
 
       table.insert(result, pandoc.Str(match.original))
-      local colour_mark = create_colour_mark(match.hex, format)
+      local colour_mark = create_colour_mark(match.hex, format, glyph)
       table.insert(result, pandoc.RawInline(language, colour_mark))
 
       last_pos = match.end_pos + 1
@@ -382,7 +454,7 @@ local function reconstruct_str_with_marks(element, matches, format, language)
       colour_text = utils.escape_text(colour_text, format)
     end
     result_text = result_text .. colour_text
-    result_text = result_text .. create_colour_mark(match.hex, format)
+    result_text = result_text .. create_colour_mark(match.hex, format, glyph)
 
     last_pos = match.end_pos + 1
   end
@@ -420,10 +492,12 @@ local function add_colour_mark(element)
     return element -- Unsupported format, return original element.
   end
 
+  local glyph = get_glyph_for_format(format)
+
   if element.t == "Code" then
-    return reconstruct_code_with_marks(element, matches, format, language)
+    return reconstruct_code_with_marks(element, matches, format, language, glyph)
   elseif element.t == "Str" then
-    return reconstruct_str_with_marks(element, matches, format, language)
+    return reconstruct_str_with_marks(element, matches, format, language, glyph)
   end
 
   return element
@@ -436,9 +510,35 @@ local function get_colour_preview_meta(meta)
   local preview_colour_text = get_preview_colour_option('text', meta)
   local preview_colour_code = get_preview_colour_option('code', meta)
 
+  -- Get glyph configuration (can be string or table)
+  -- Note: Do NOT use utils.get_metadata_value here as it stringifies the result,
+  -- which would concatenate all table values. We need the raw metadata object.
+  local glyph_config = nil
+  if meta['extensions'] and meta['extensions']['preview-colour'] and meta['extensions']['preview-colour']['glyph'] then
+    glyph_config = meta['extensions']['preview-colour']['glyph']
+  end
+  if glyph_config == nil then
+    -- Check deprecated top-level config
+    if meta['preview-colour'] and meta['preview-colour']['glyph'] then
+      glyph_config = meta['preview-colour']['glyph']
+      if not deprecation_warning_shown then
+        utils.log_warning(
+          EXTENSION_NAME,
+          'Top-level "preview-colour" configuration is deprecated. ' ..
+          'Please use:\n' ..
+          'extensions:\n' ..
+          '  preview-colour:\n' ..
+          '    glyph: value'
+        )
+        deprecation_warning_shown = true
+      end
+    end
+  end
+
   meta['extensions']['preview-colour'] = {
     ["text"] = preview_colour_text,
-    ["code"] = preview_colour_code
+    ["code"] = preview_colour_code,
+    ["glyph"] = glyph_config
   }
   preview_colour_meta = meta['extensions']['preview-colour']
   return meta

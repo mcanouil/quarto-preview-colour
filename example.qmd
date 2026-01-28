@@ -71,6 +71,13 @@ extensions:
   preview-colour:
     code: true
     text: true
+    glyph:
+      default: "●"
+      html: "&#9673;"
+      latex: '\\textbullet'
+      typst: "◉"
+      docx: "●"
+      pptx: "●"
 ---
 
 ## Supported Colour Formats
