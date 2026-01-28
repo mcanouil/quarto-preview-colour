@@ -87,6 +87,44 @@ local function get_preview_colour_option(key, meta)
   return true -- fallback for any other keys
 end
 
+--- Check and escape LaTeX commands in glyph string.
+--- Detects unescaped LaTeX commands (single backslash) and escapes them.
+--- @param glyph string The glyph string to check.
+--- @return string The glyph with properly escaped LaTeX commands.
+local function escape_latex_glyph(glyph)
+  if glyph == nil or glyph == "" then
+    return glyph
+  end
+
+  -- Pattern to find single backslash followed by word characters (LaTeX command)
+  -- but not preceded by another backslash (already escaped)
+  -- Lua pattern: look for \ followed by letters, but not \\
+  local escaped = glyph
+  local needs_escape = false
+
+  -- Check if there's a single backslash followed by letters (not already doubled)
+  -- We need to handle this carefully: \text is unescaped, \\text is escaped
+  if string.match(glyph, "^\\[a-zA-Z]") and not string.match(glyph, "^\\\\") then
+    needs_escape = true
+    escaped = "\\" .. glyph
+  elseif string.match(glyph, "[^\\]\\[a-zA-Z]") then
+    -- Single backslash in the middle (not preceded by another backslash)
+    needs_escape = true
+    escaped = string.gsub(glyph, "([^\\])\\([a-zA-Z])", "%1\\\\%2")
+  end
+
+  if needs_escape then
+    utils.log_warning(
+      EXTENSION_NAME,
+      'LaTeX glyph "' .. glyph .. '" contains unescaped command. ' ..
+      'Automatically escaped to "' .. escaped .. '". ' ..
+      'Consider using double backslash in YAML: \'\\\\textbullet\''
+    )
+  end
+
+  return escaped
+end
+
 --- Get glyph for a specific output format.
 --- Checks user configuration and falls back to defaults.
 --- @param format string Output format (html, latex, typst, docx, pptx).
@@ -112,23 +150,34 @@ local function get_glyph_for_format(format)
     end
   end
 
+  local glyph = nil
+
   if is_format_table then
     -- Per-format configuration (MetaMap)
     if glyph_config[format] then
-      return utils.stringify(glyph_config[format])
-    end
-    if glyph_config["default"] then
-      return utils.stringify(glyph_config["default"])
+      glyph = utils.stringify(glyph_config[format])
+    elseif glyph_config["default"] then
+      glyph = utils.stringify(glyph_config["default"])
     end
   else
     -- Simple string configuration (MetaInlines) or plain string
     local glyph_str = utils.stringify(glyph_config)
     if glyph_str and glyph_str ~= "" then
-      return glyph_str
+      glyph = glyph_str
     end
   end
 
-  return default_glyphs[format] or default_glyphs["html"]
+  -- Fall back to default if no glyph found
+  if glyph == nil then
+    return default_glyphs[format] or default_glyphs["html"]
+  end
+
+  -- For LaTeX format, check for unescaped commands and escape them
+  if format == "latex" then
+    glyph = escape_latex_glyph(glyph)
+  end
+
+  return glyph
 end
 
 
