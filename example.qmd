@@ -102,30 +102,30 @@ extensions:
 - ✅ **code**: `#F03`
 - ✅ **text**: #F03
 
-### 🔶 RGB
+### ✅ RGB
 
 - ✅ **code**: `rgb(10, 100, 200)`
 - ✅ **code** (no space): `rgb(10,100,200)`
-- ❌ **text**: rgb(10, 100, 200)
+- ✅ **text**: rgb(10, 100, 200)
 - ✅ **text** (no space): rgb(10,100,200)
 
-### 🔶 RGB (%)
+### ✅ RGB (%)
 
 - ✅ **code**: `rgb(100%, 20%, 100%)`
 - ✅ **code** (no space): `rgb(100%,20%,100%)`
-- ❌ **text**: rgb(100%, 20%, 100%)
+- ✅ **text**: rgb(100%, 20%, 100%)
 - ✅ **text** (no space): rgb(100%,20%,100%)
 
-### 🔶 HWB
+### ✅ HWB
 
 - ✅ **code**: `hwb(135 0% 40%)`
-- ❌ **text**: hwb(135 0% 40%)
+- ✅ **text**: hwb(135 0% 40%)
 
-### 🔶 HSL
+### ✅ HSL
 
 - ✅ **code**: `hsl(240, 100%, 50%)`
 - ✅ **code** (no space): `hsl(240,100%,50%)`
-- ❌ **text**: hsl(240, 100%, 50%)
+- ✅ **text**: hsl(240, 100%, 50%)
 - ✅ **text** (no space): hsl(240,100%,50%)
 
 ## Multiple and Embedded Colours
