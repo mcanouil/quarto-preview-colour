@@ -99,7 +99,10 @@ Default glyphs when not customised:
 
 ## Supported Colour Formats
 
-- ❌ Names one: `orange` (_will probably never be supported_)
+- ✅ Named colours (CSS Level 4):
+  - ✅ **code**: `red`, `rebeccapurple`, `cornflowerblue`
+  - ✅ **text**: red, rebeccapurple, cornflowerblue
+  - ✅ Supports 140+ CSS named colours including British/American variants (`gray`/`grey`)
 - ✅ hex codes:
   - ✅ **code**: `#441100`
   - ✅ **text**: #441100

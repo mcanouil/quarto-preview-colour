@@ -82,9 +82,15 @@ extensions:
 
 ## Supported Colour Formats
 
-### ❌ Names
+### ✅ Named Colours
 
-- Names one: `orange` (*will probably never be supported*)
+- ✅ **code**: `red`
+- ✅ **code**: `rebeccapurple`
+- ✅ **code**: `cornflowerblue`
+- ✅ **text**: red
+- ✅ **text**: rebeccapurple
+- ✅ **text**: cornflowerblue
+- ✅ **British/American**: `gray` / `grey`
 
 ### ✅ Hex Codes
 

@@ -143,7 +143,7 @@ end
 --- @param glyph string Glyph character to use for the preview.
 --- @return string HTML colour preview mark.
 local function create_html_colour_mark(hex, glyph)
-  return '<span style="font-size: 1lh; font-family: system-ui, sans-serif; color: ' ..
+  return '<span style="font-size: 0.8lh; font-family: system-ui, sans-serif; color: ' ..
       hex ..
       '; cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; position: relative;" title="Colour preview: ' ..
       hex ..
@@ -233,7 +233,8 @@ local function get_all_colours(element)
     { name = 'rgb_percent', pattern = 'rgb%s*%(%s*%d+%s*%%%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*%)' },
     { name = 'hsl',         pattern = 'hsl%s*%(%s*%d+%s*,%s*%d+%s*%%,%s*%d+%s*%%s*%)' },
     { name = 'hwb',         pattern = 'hwb%s*%(%s*%d+%s+%d+%%%s+%d+%%%s*%)' },
-    { name = 'hex3',        pattern = '#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]' } -- Last to avoid false positives
+    { name = 'hex3',        pattern = '#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]' }, -- Before named to avoid false positives
+    { name = 'named',       pattern = '[a-zA-Z]+', validate = colour.is_named_colour } -- Last: requires validation
   }
 
   -- Track covered positions to prevent overlaps
@@ -263,15 +264,26 @@ local function get_all_colours(element)
       -- Check if position is already covered by a previous match
       if not is_position_covered(start_pos, end_pos) then
         local matched_text = string.sub(text, start_pos, end_pos)
-        local hex = colour.to_html(matched_text, pat.name)
-        table.insert(matches, {
-          hex = hex,
-          original = matched_text,
-          start_pos = start_pos,
-          end_pos = end_pos,
-          format = pat.name
-        })
-        table.insert(covered, { start_pos, end_pos })
+
+        -- If pattern has a validation function, use it to verify the match
+        local is_valid = true
+        if pat.validate then
+          is_valid = pat.validate(matched_text)
+        end
+
+        if is_valid then
+          local hex = colour.to_html(matched_text, pat.name)
+          if hex then
+            table.insert(matches, {
+              hex = hex,
+              original = matched_text,
+              start_pos = start_pos,
+              end_pos = end_pos,
+              format = pat.name
+            })
+            table.insert(covered, { start_pos, end_pos })
+          end
+        end
       end
 
       pos = end_pos + 1
