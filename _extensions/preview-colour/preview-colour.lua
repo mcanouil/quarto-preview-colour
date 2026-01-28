@@ -578,11 +578,154 @@ local function process_code(element)
   return add_colour_mark(element)
 end
 
+--- Patterns that start multi-token colours (function-style colours with parentheses).
+--- @type table<string, string>
+local multi_token_starters = {
+  ["rgb("] = "rgb",
+  ["hsl("] = "hsl",
+  ["hwb("] = "hwb"
+}
+
+--- Check if a Str element starts a multi-token colour.
+--- @param str_text string The text content of a Str element.
+--- @return string|nil The colour function name if it starts a multi-token colour.
+local function get_multitoken_starter(str_text)
+  for starter, func_name in pairs(multi_token_starters) do
+    if string.find(str_text, starter, 1, true) then
+      return func_name
+    end
+  end
+  return nil
+end
+
+--- Try to parse a complete colour from joined text.
+--- @param text string The joined text to parse.
+--- @return string|nil, string|nil The hex colour and format name, or nil if not a valid colour.
+local function try_parse_colour(text)
+  -- Try each pattern that could match the joined text
+  local patterns = {
+    { name = 'rgb',         pattern = '^rgb%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%)$' },
+    { name = 'rgb_percent', pattern = '^rgb%s*%(%s*%d+%s*%%%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*%)$' },
+    { name = 'hsl',         pattern = '^hsl%s*%(%s*%d+%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*%)$' },
+    { name = 'hwb',         pattern = '^hwb%s*%(%s*%d+%s+%d+%%%s+%d+%%%s*%)$' }
+  }
+
+  for _, pat in ipairs(patterns) do
+    if string.match(text, pat.pattern) then
+      local hex = colour.to_html(text, pat.name)
+      if hex then
+        return hex, pat.name
+      end
+    end
+  end
+
+  return nil, nil
+end
+
+--- Process Inlines to detect and merge multi-token colours.
+--- Handles colours like rgb(10, 100, 200) that are split across multiple Str/Space elements.
+--- @param inlines table Pandoc Inlines list.
+--- @return table Modified Inlines list with multi-token colours processed.
+local function process_inlines(inlines)
+  if preview_colour_meta['text'] == false then
+    return inlines
+  end
+
+  local format, language = utils.get_quarto_format()
+  if format == "unknown" then
+    return inlines
+  end
+
+  local glyph = get_glyph_for_format(format)
+  local result = pandoc.List()
+  local i = 1
+
+  while i <= #inlines do
+    local elem = inlines[i]
+
+    -- Check if this is a Str that could start a multi-token colour
+    if elem.t == "Str" then
+      local starter = get_multitoken_starter(elem.text)
+
+      if starter then
+        -- Try to collect tokens until we find a closing parenthesis
+        local collected = { elem.text }
+        local j = i + 1
+        local found_close = string.find(elem.text, ")", 1, true) ~= nil
+
+        while j <= #inlines and not found_close do
+          local next_elem = inlines[j]
+
+          if next_elem.t == "Str" then
+            table.insert(collected, next_elem.text)
+            if string.find(next_elem.text, ")", 1, true) then
+              found_close = true
+            end
+          elseif next_elem.t == "Space" then
+            table.insert(collected, " ")
+          else
+            -- Non-Str/Space element breaks the sequence
+            break
+          end
+
+          j = j + 1
+        end
+
+        if found_close then
+          -- Join collected tokens and try to parse as colour
+          local joined = table.concat(collected)
+          local hex, _ = try_parse_colour(joined)
+
+          if hex then
+            -- Successfully parsed a colour - create the replacement
+            local colour_mark = create_colour_mark(hex, format, glyph)
+
+            if language == "openxml" then
+              -- For OpenXML, use Str + RawInline
+              result:insert(pandoc.Str(joined))
+              result:insert(pandoc.RawInline(language, colour_mark))
+            else
+              -- For HTML/LaTeX/Typst, create RawInline with text + mark
+              local text_escaped = joined
+              if format == "latex" or format == "typst" then
+                text_escaped = utils.escape_text(joined, format)
+              end
+              result:insert(pandoc.RawInline(language, text_escaped .. colour_mark))
+            end
+
+            -- Skip all consumed elements
+            i = j
+          else
+            -- Not a valid colour, keep original element
+            result:insert(elem)
+            i = i + 1
+          end
+        else
+          -- No closing paren found, keep original element
+          result:insert(elem)
+          i = i + 1
+        end
+      else
+        -- Not a starter, keep original element
+        result:insert(elem)
+        i = i + 1
+      end
+    else
+      -- Not a Str element, keep as-is
+      result:insert(elem)
+      i = i + 1
+    end
+  end
+
+  return result
+end
+
 --- Pandoc filter configuration.
 --- Defines the processing pipeline for different pandoc elements.
 --- @return table Filter table for Pandoc.
 return {
   { Meta = get_colour_preview_meta },
+  { Inlines = process_inlines }, -- Process multi-token colours first
   { Str = process_str },
   { Code = process_code }
 }

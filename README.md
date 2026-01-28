@@ -39,7 +39,7 @@ To activate the filter, add the following to your YAML front matter:
 
 ```qmd
 - code: `#441100` or `rgb(10, 100, 200)`
-- text: #441100 or rgb(10,100,200)
+- text: #441100 or rgb(10, 100, 200)
 ```
 
 > [!NOTE]
@@ -109,23 +109,23 @@ Default glyphs when not customised:
 - ✅ short hex codes:
   - ✅ **code**: `#F03`
   - ✅ **text**: #F03
-- 🔶 rgb:
+- ✅ rgb:
   - ✅ **code**: `rgb(10, 100, 200)`
   - ✅ **code** (no space): `rgb(10,100,200)`
-  - ❌ **text**: rgb(10, 100, 200)
+  - ✅ **text**: rgb(10, 100, 200)
   - ✅ **text** (no space): rgb(10,100,200)
-- 🔶 rgb with %:
+- ✅ rgb with %:
   - ✅ **code**: `rgb(100%, 20%, 100%)`
   - ✅ **code** (no space): `rgb(100%,20%,100%)`
-  - ❌ **text**: rgb(100%, 20%, 100%)
+  - ✅ **text**: rgb(100%, 20%, 100%)
   - ✅ **text** (no space): rgb(100%,20%,100%)
-- 🔶 hwb:
+- ✅ hwb:
   - ✅ **code**: `hwb(135 0% 40%)`
-  - ❌ **text**: hwb(135 0% 40%)
-- 🔶 hsl:
+  - ✅ **text**: hwb(135 0% 40%)
+- ✅ hsl:
   - ✅ **code**: `hsl(240, 100%, 50%)`
   - ✅ **code** (no space): `hsl(240,100%,50%)`
-  - ❌ **text**: hsl(240, 100%, 50%)
+  - ✅ **text**: hsl(240, 100%, 50%)
   - ✅ **text** (no space): hsl(240,100%,50%)
 
 ## Examples
