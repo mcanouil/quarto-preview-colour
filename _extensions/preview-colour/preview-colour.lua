@@ -33,10 +33,6 @@ local colour = require(quarto.utils.resolve_path("_modules/colour.lua"):gsub("%.
 --- @type boolean
 local deprecation_warning_shown = false
 
---- Flag to track if LaTeX escape warning has been shown.
---- @type boolean
-local latex_escape_warning_shown = false
-
 --- Default configuration for preview colour features.
 --- @type table<string, boolean>
 local preview_colour_meta = {
@@ -91,44 +87,6 @@ local function get_preview_colour_option(key, meta)
   return true -- fallback for any other keys
 end
 
---- Common LaTeX glyph commands (without backslash prefix).
---- @type table<integer, string>
-local latex_glyph_commands = {
-  "textbullet", "bullet", "circ", "cdot", "star", "ast",
-  "diamond", "bigcirc", "square", "blacksquare", "triangleright"
-}
-
---- Fix LaTeX glyph when backslash was interpreted as escape sequence.
---- Detects when \t was interpreted as tab and fixes it.
---- @param glyph string The glyph string to check.
---- @return string The glyph with fixed LaTeX command.
-local function fix_latex_glyph(glyph)
-  if glyph == nil or glyph == "" then
-    return glyph
-  end
-
-  -- Check if backslash was lost (e.g., \textbullet became [TAB]extbullet)
-  -- This happens when YAML interprets \t as a tab character
-  for _, cmd in ipairs(latex_glyph_commands) do
-    -- Check if string starts with tab + rest of command (backslash interpreted as \t)
-    local tab_pattern = "\t" .. string.sub(cmd, 2)
-    if string.sub(glyph, 1, #tab_pattern) == tab_pattern then
-      local fixed = "\\" .. cmd
-      if not latex_escape_warning_shown then
-        utils.log_warning(
-          EXTENSION_NAME,
-          'LaTeX glyph backslash was interpreted as tab. ' ..
-          'Automatically fixed. In YAML, use single-quoted string: \'\\\\' .. cmd .. '\''
-        )
-        latex_escape_warning_shown = true
-      end
-      return fixed
-    end
-  end
-
-  return glyph
-end
-
 --- Get glyph for a specific output format.
 --- Checks user configuration and falls back to defaults.
 --- @param format string Output format (html, latex, typst, docx, pptx).
@@ -174,11 +132,6 @@ local function get_glyph_for_format(format)
   -- Fall back to default if no glyph found
   if glyph == nil then
     return default_glyphs[format] or default_glyphs["html"]
-  end
-
-  -- For LaTeX format, check for unescaped commands and escape them
-  if format == "latex" then
-    glyph = fix_latex_glyph(glyph)
   end
 
   return glyph
