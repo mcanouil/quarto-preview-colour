@@ -96,33 +96,23 @@ local function escape_latex_glyph(glyph)
     return glyph
   end
 
-  -- Pattern to find single backslash followed by word characters (LaTeX command)
-  -- but not preceded by another backslash (already escaped)
-  -- Lua pattern: look for \ followed by letters, but not \\
-  local escaped = glyph
-  local needs_escape = false
-
-  -- Check if there's a single backslash followed by letters (not already doubled)
-  -- We need to handle this carefully: \text is unescaped, \\text is escaped
-  if string.match(glyph, "^\\[a-zA-Z]") and not string.match(glyph, "^\\\\") then
-    needs_escape = true
-    escaped = "\\" .. glyph
-  elseif string.match(glyph, "[^\\]\\[a-zA-Z]") then
-    -- Single backslash in the middle (not preceded by another backslash)
-    needs_escape = true
-    escaped = string.gsub(glyph, "([^\\])\\([a-zA-Z])", "%1\\\\%2")
+  -- Check if already properly escaped (starts with \\)
+  if string.sub(glyph, 1, 2) == "\\\\" then
+    return glyph
   end
 
-  if needs_escape then
+  -- Check if it's a LaTeX command (starts with single \)
+  if string.sub(glyph, 1, 1) == "\\" then
+    local escaped = "\\" .. glyph
     utils.log_warning(
       EXTENSION_NAME,
-      'LaTeX glyph "' .. glyph .. '" contains unescaped command. ' ..
-      'Automatically escaped to "' .. escaped .. '". ' ..
-      'Consider using double backslash in YAML: \'\\\\textbullet\''
+      'LaTeX glyph contains unescaped backslash. ' ..
+      'Automatically escaped. In YAML, use: "\\\\textbullet" or \'\\\\textbullet\''
     )
+    return escaped
   end
 
-  return escaped
+  return glyph
 end
 
 --- Get glyph for a specific output format.
