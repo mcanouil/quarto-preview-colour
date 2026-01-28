@@ -33,6 +33,10 @@ local colour = require(quarto.utils.resolve_path("_modules/colour.lua"):gsub("%.
 --- @type boolean
 local deprecation_warning_shown = false
 
+--- Flag to track if LaTeX escape warning has been shown.
+--- @type boolean
+local latex_escape_warning_shown = false
+
 --- Default configuration for preview colour features.
 --- @type table<string, boolean>
 local preview_colour_meta = {
@@ -113,11 +117,14 @@ local function escape_latex_glyph(glyph)
 
   -- Single backslash needs escaping
   local escaped = "\\" .. glyph
-  utils.log_warning(
-    EXTENSION_NAME,
-    'LaTeX glyph contains unescaped backslash. ' ..
-    'Automatically escaped. In YAML, use double backslash: \'\\\\textbullet\''
-  )
+  if not latex_escape_warning_shown then
+    utils.log_warning(
+      EXTENSION_NAME,
+      'LaTeX glyph contains unescaped backslash. ' ..
+      'Automatically escaped. In YAML, use double backslash: \'\\\\textbullet\''
+    )
+    latex_escape_warning_shown = true
+  end
   return escaped
 end
 
