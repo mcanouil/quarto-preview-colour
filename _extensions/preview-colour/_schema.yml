@@ -1,0 +1,21 @@
+# _schema.yml for "preview-colour" filter extension
+# Describes options for IDE tooling and runtime validation.
+
+# Extension-level metadata options.
+# Configured in _quarto.yml, _metadata.yml, or document front matter:
+#   extensions:
+#     preview-colour:
+#       text: false
+#       code: true
+options:
+  text:
+    type: boolean
+    default: false
+    description: "Enable colour preview in plain text."
+  code:
+    type: boolean
+    default: true
+    description: "Enable colour preview in inline code."
+  glyph:
+    type: string
+    description: "Glyph character for colour preview marks. Can also be an object with per-format glyphs (html, latex, typst, docx, pptx, default)."
