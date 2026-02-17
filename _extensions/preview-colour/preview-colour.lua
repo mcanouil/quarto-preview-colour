@@ -6,9 +6,10 @@
 --- Extension name constant
 local EXTENSION_NAME = "preview-colour"
 
---- Load utils and colour modules
+--- Load utils, colour, and schema modules
 local utils = require(quarto.utils.resolve_path("_modules/utils.lua"):gsub("%.lua$", ""))
 local colour = require(quarto.utils.resolve_path("_modules/colour.lua"):gsub("%.lua$", ""))
+local schema = require(quarto.utils.resolve_path("_modules/schema.lua"):gsub("%.lua$", ""))
 
 --- Flag to track if deprecation warning has been shown.
 --- @type boolean
@@ -500,8 +501,9 @@ end
 --- @param meta table<string, any> Document metadata table.
 --- @return table<string, any> Updated metadata table with preview-colour configuration.
 local function get_colour_preview_meta(meta)
-  local preview_colour_text = get_preview_colour_option('text', meta)
-  local preview_colour_code = get_preview_colour_option('code', meta)
+  local validated = schema.validate_options(meta, EXTENSION_NAME, quarto.utils.resolve_path('_schema.yml'))
+  local preview_colour_text = validated.text
+  local preview_colour_code = validated.code
 
   -- Get glyph configuration (can be string or table)
   -- Note: Do NOT use utils.get_metadata_value here as it stringifies the result,
