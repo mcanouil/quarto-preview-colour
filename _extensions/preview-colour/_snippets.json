@@ -1,0 +1,15 @@
+{
+  "Preview colour config": {
+    "prefix": "meta",
+    "body": [
+      "filters:",
+      "  - path: preview-colour",
+      "    at: post-quarto",
+      "extensions:",
+      "  preview-colour:",
+      "    code: ${1:true}",
+      "    text: ${2:false}"
+    ],
+    "description": "Configure preview-colour extension settings"
+  }
+}
