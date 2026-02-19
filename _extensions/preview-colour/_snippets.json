@@ -1,6 +1,6 @@
 {
   "Preview colour config": {
-    "prefix": "preview-colour-config",
+    "prefix": "meta",
     "body": [
       "filters:",
       "  - path: preview-colour",
