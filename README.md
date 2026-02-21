@@ -9,7 +9,7 @@ It supports rendering in various output formats such as HTML, Reveal.js, PDF (vi
 You can install this extension using the Quarto CLI:
 
 ```bash
-quarto add mcanouil/quarto-preview-colour@1.3.1
+quarto add mcanouil/quarto-preview-colour@1.4.0
 ```
 
 This will install the extension under the `_extensions` subdirectory.
