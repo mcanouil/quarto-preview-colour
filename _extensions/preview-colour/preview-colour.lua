@@ -504,11 +504,12 @@ local function get_colour_preview_meta(meta)
   local preview_colour_code = get_preview_colour_option('code', meta)
 
   -- Get glyph configuration (can be string or table)
-  -- Note: Do NOT use utils.get_metadata_value here as it stringifies the result,
-  -- which would concatenate all table values. We need the raw metadata object.
+  -- Use get_extension_config (not get_metadata_value) to preserve the raw
+  -- metadata object without stringifying table values.
   local glyph_config = nil
-  if meta['extensions'] and meta['extensions']['preview-colour'] and meta['extensions']['preview-colour']['glyph'] then
-    glyph_config = meta['extensions']['preview-colour']['glyph']
+  local ext_config = utils.get_extension_config(meta, EXTENSION_NAME)
+  if ext_config and ext_config['glyph'] then
+    glyph_config = ext_config['glyph']
   end
   if glyph_config == nil then
     -- Check deprecated top-level config
