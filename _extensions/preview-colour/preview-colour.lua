@@ -6,8 +6,11 @@
 --- Extension name constant
 local EXTENSION_NAME = "preview-colour"
 
---- Load utils and colour modules
-local utils = require(quarto.utils.resolve_path("_modules/utils.lua"):gsub("%.lua$", ""))
+--- Load required modules
+local str = require(quarto.utils.resolve_path("_modules/string.lua"):gsub("%.lua$", ""))
+local log = require(quarto.utils.resolve_path("_modules/logging.lua"):gsub("%.lua$", ""))
+local meta_mod = require(quarto.utils.resolve_path("_modules/metadata.lua"):gsub("%.lua$", ""))
+local pdoc = require(quarto.utils.resolve_path("_modules/pandoc-helpers.lua"):gsub("%.lua$", ""))
 local colour = require(quarto.utils.resolve_path("_modules/colour.lua"):gsub("%.lua$", ""))
 
 --- Flag to track if deprecation warning has been shown.
@@ -37,7 +40,7 @@ local default_glyphs = {
 --- @return boolean|nil The value from deprecated config, or nil if not found.
 local function check_deprecated_config(meta, key)
   local value
-  value, deprecation_warning_shown = utils.check_deprecated_config(meta, 'preview-colour', key, deprecation_warning_shown)
+  value, deprecation_warning_shown = meta_mod.check_deprecated_config(meta, 'preview-colour', key, deprecation_warning_shown)
   return value
 end
 
@@ -47,8 +50,8 @@ end
 --- @return boolean The option value as a boolean.
 local function get_preview_colour_option(key, meta)
   -- Check new nested structure: extensions.preview-colour.key
-  local meta_value = utils.get_metadata_value(meta, 'preview-colour', key)
-  if not utils.is_empty(meta_value) then
+  local meta_value = meta_mod.get_metadata_value(meta, 'preview-colour', key)
+  if not str.is_empty(meta_value) then
     return meta_value
   end
 
@@ -98,13 +101,13 @@ local function get_glyph_for_format(format)
   if is_format_table then
     -- Per-format configuration (MetaMap)
     if glyph_config[format] then
-      glyph = utils.stringify(glyph_config[format])
+      glyph = str.stringify(glyph_config[format])
     elseif glyph_config["default"] then
-      glyph = utils.stringify(glyph_config["default"])
+      glyph = str.stringify(glyph_config["default"])
     end
   else
     -- Simple string configuration (MetaInlines) or plain string
-    local glyph_str = utils.stringify(glyph_config)
+    local glyph_str = str.stringify(glyph_config)
     if glyph_str and glyph_str ~= "" then
       glyph = glyph_str
     end
@@ -316,9 +319,9 @@ local function reconstruct_code_with_marks(element, matches, format, language, g
       if format == "html" then
         prefix = escape_html(prefix)
       elseif format == "latex" then
-        prefix = utils.escape_text(prefix, format)
+        prefix = str.escape_text(prefix, format)
       elseif format == "typst" then
-        prefix = utils.escape_text(prefix, format)
+        prefix = str.escape_text(prefix, format)
       end
       result_text = result_text .. prefix
     end
@@ -328,9 +331,9 @@ local function reconstruct_code_with_marks(element, matches, format, language, g
     if format == "html" then
       colour_text = escape_html(colour_text)
     elseif format == "latex" then
-      colour_text = utils.escape_text(colour_text, format)
+      colour_text = str.escape_text(colour_text, format)
     elseif format == "typst" then
-      colour_text = utils.escape_text(colour_text, format)
+      colour_text = str.escape_text(colour_text, format)
     end
     result_text = result_text .. colour_text
 
@@ -346,9 +349,9 @@ local function reconstruct_code_with_marks(element, matches, format, language, g
     if format == "html" then
       suffix = escape_html(suffix)
     elseif format == "latex" then
-      suffix = utils.escape_text(suffix, format)
+      suffix = str.escape_text(suffix, format)
     elseif format == "typst" then
-      suffix = utils.escape_text(suffix, format)
+      suffix = str.escape_text(suffix, format)
     end
     result_text = result_text .. suffix
   end
@@ -437,14 +440,14 @@ local function reconstruct_str_with_marks(element, matches, format, language, gl
     if match.start_pos > last_pos then
       local prefix = string.sub(text, last_pos, match.start_pos - 1)
       if format == "latex" or format == "typst" then
-        prefix = utils.escape_text(prefix, format)
+        prefix = str.escape_text(prefix, format)
       end
       result_text = result_text .. prefix
     end
 
     local colour_text = match.original
     if format == "latex" or format == "typst" then
-      colour_text = utils.escape_text(colour_text, format)
+      colour_text = str.escape_text(colour_text, format)
     end
     result_text = result_text .. colour_text
     result_text = result_text .. create_colour_mark(match.hex, format, glyph)
@@ -455,7 +458,7 @@ local function reconstruct_str_with_marks(element, matches, format, language, gl
   if last_pos <= #text then
     local suffix = string.sub(text, last_pos)
     if format == "latex" or format == "typst" then
-      suffix = utils.escape_text(suffix, format)
+      suffix = str.escape_text(suffix, format)
     end
     result_text = result_text .. suffix
   end
@@ -475,9 +478,9 @@ local function add_colour_mark(element)
     return element -- No colours found, return original element.
   end
 
-  local format, language = utils.get_quarto_format()
+  local format, language = pdoc.get_quarto_format()
   if format == "unknown" then
-    utils.log_warning(
+    log.log_warning(
       EXTENSION_NAME,
       'Unsupported output format for colour preview: "' .. language .. '". ' ..
       'No colour preview will be generated.'
@@ -507,7 +510,7 @@ local function get_colour_preview_meta(meta)
   -- Use get_extension_config (not get_metadata_value) to preserve the raw
   -- metadata object without stringifying table values.
   local glyph_config = nil
-  local ext_config = utils.get_extension_config(meta, EXTENSION_NAME)
+  local ext_config = meta_mod.get_extension_config(meta, EXTENSION_NAME)
   if ext_config and ext_config['glyph'] then
     glyph_config = ext_config['glyph']
   end
@@ -516,7 +519,7 @@ local function get_colour_preview_meta(meta)
     if meta['preview-colour'] and meta['preview-colour']['glyph'] then
       glyph_config = meta['preview-colour']['glyph']
       if not deprecation_warning_shown then
-        utils.log_warning(
+        log.log_warning(
           EXTENSION_NAME,
           'Top-level "preview-colour" configuration is deprecated. ' ..
           'Please use:\n' ..
@@ -613,7 +616,7 @@ local function process_inlines(inlines)
     return inlines
   end
 
-  local format, language = utils.get_quarto_format()
+  local format, language = pdoc.get_quarto_format()
   if format == "unknown" then
     return inlines
   end
@@ -670,7 +673,7 @@ local function process_inlines(inlines)
               -- For HTML/LaTeX/Typst, create RawInline with text + mark
               local text_escaped = joined
               if format == "latex" or format == "typst" then
-                text_escaped = utils.escape_text(joined, format)
+                text_escaped = str.escape_text(joined, format)
               end
               result:insert(pandoc.RawInline(language, text_escaped .. colour_mark))
             end

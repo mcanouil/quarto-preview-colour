@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-No user-facing changes.
+### Refactoring
+
+- refactor: Replace monolithic `utils.lua` with focused modules (`string.lua`, `logging.lua`, `metadata.lua`, `pandoc-helpers.lua`, `html.lua`, `paths.lua`, `colour.lua`).
 
 ## 1.4.0 (2026-02-21)
 
@@ -12,8 +14,6 @@ No user-facing changes.
 - feat: Add _schema.yml for configuration validation and IDE support (#44).
 
 ## 1.3.1 (2026-02-11)
-
-No user-facing changes.
 
 ## 1.3.0 (2026-01-28)
 
@@ -127,4 +127,3 @@ No user-facing changes.
 
 ## 0.1.0 (2023-06-14)
 
-No user-facing changes.
