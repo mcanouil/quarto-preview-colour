@@ -22,3 +22,6 @@ options:
   glyph:
     type: [string, object]
     description: "Glyph character for colour preview marks. Can also be an object with per-format glyphs (html, latex, typst, docx, pptx, default)."
+  json:
+    type: [boolean, string]
+    description: "Bulk colour export. `true` writes detected colours to `preview-colour.json`; a string sets a custom path; `false` disables export. Mirrors the lua-env JSON feature."

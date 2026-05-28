@@ -8,3 +8,5 @@
 *.tex
 *.docx
 *.pptx
+/example-colours.json
+/preview-colour.json

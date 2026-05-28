@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+## 1.6.0 (2026-05-28)
+
+### Bug Fixes
+
+- fix: Repair the HSL inline pattern so values such as `hsl(240, 100%, 50% )` and `hsl(240, 100%, 50%)` are detected; previously a stray literal in the regex (`%%s*` instead of `%%%s*`, plus a missing `%s*` before the second comma) rejected any whitespace before the closing parenthesis or before the comma after the second percentage.
+- fix: Preserve trailing punctuation when a multi-token colour ends a sentence; `rgb(255, 0, 0).` and `hsla(120, 100%, 50%, 0.25).` in plain text are now detected, then the trailing punctuation is reinserted unchanged.
+
+### New Features
+
+- feat: Add alpha-channel support for `rgba()` and `hsla()` in both inline code and plain text. HTML renders the alpha-bearing colour faithfully, while LaTeX, Typst, DOCX, and PPTX render the opaque hex and emit a one-time warning.
+- feat: Recognise the CSS keyword colours `currentColor` and `transparent`. HTML renders the swatch with `color: currentColor` or `color: transparent`; other formats skip the swatch with a one-time warning.
+- feat: Add bulk JSON export of detected colours via `extensions.preview-colour.json` (mirroring the `lua-env` JSON feature). Set to `true` to write `preview-colour.json`, or supply a file path. Each entry records the original token, hex (when available), alpha, keyword, css, and the source (`code`, `text`, or `text-multitoken`).
+
+### Documentation
+
+- docs: Document alpha, keyword, and JSON-export features in `README` and `example.qmd`.
+- docs: Add a performance note (the filter scans every `Str` element; cost is linear in document size).
+- docs: Add a deprecation timeline for the legacy top-level `preview-colour:` configuration; removal is planned for v2.0.0.
+
+### Schema and Snippets
+
+- feat: Add `json` to `_schema.yml` so editors can validate and autocomplete the bulk-export option.
+- feat: Add a `preview-colour-json` snippet to `_snippets.json`.
+
 ## 1.5.1 (2026-04-15)
 
 ### Refactoring
