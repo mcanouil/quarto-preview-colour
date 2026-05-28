@@ -2,8 +2,6 @@
 
 ## Unreleased
 
-## 1.6.0 (2026-05-28)
-
 ### Bug Fixes
 
 - fix: Repair the HSL inline pattern so values such as `hsl(240, 100%, 50% )` and `hsl(240, 100%, 50%)` are detected; previously a stray literal in the regex (`%%s*` instead of `%%%s*`, plus a missing `%s*` before the second comma) rejected any whitespace before the closing parenthesis or before the comma after the second percentage.
