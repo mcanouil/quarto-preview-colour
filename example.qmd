@@ -71,6 +71,7 @@ extensions:
   preview-colour:
     code: true
     text: true
+    json: example-colours.json
     glyph:
       default: "●"
       html: "&#9673;"
@@ -127,6 +128,30 @@ extensions:
 - ✅ **code** (no space): `hsl(240,100%,50%)`
 - ✅ **text**: hsl(240, 100%, 50%)
 - ✅ **text** (no space): hsl(240,100%,50%)
+
+### ✅ RGBA (alpha channel)
+
+- ✅ **code**: `rgba(255, 0, 0, 0.5)`
+- ✅ **code** (percent alpha): `rgba(255, 0, 0, 50%)`
+- ✅ **text**: rgba(255, 0, 0, 0.5)
+
+### ✅ HSLA (alpha channel)
+
+- ✅ **code**: `hsla(120, 100%, 50%, 0.25)`
+- ✅ **text**: hsla(120, 100%, 50%, 0.25)
+
+### ✅ Keyword colours
+
+- ✅ **code**: `currentColor`
+- ✅ **code**: `transparent`
+- ✅ **text**: currentColor
+- ✅ **text**: transparent
+
+::: {.callout-note}
+Alpha-bearing colours render faithfully in HTML.
+In LaTeX, Typst, DOCX, and PPTX, the opaque colour is shown and a one-time warning is emitted.
+The `currentColor` and `transparent` keywords render only in HTML; other formats skip the preview with a one-time warning.
+:::
 
 ## Multiple and Embedded Colours
 

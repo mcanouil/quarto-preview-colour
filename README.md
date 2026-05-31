@@ -127,6 +127,91 @@ Default glyphs when not customised:
   - ✅ **code** (no space): `hsl(240,100%,50%)`
   - ✅ **text**: hsl(240, 100%, 50%)
   - ✅ **text** (no space): hsl(240,100%,50%)
+- ✅ rgba (alpha channel):
+  - ✅ **code**: `rgba(255, 0, 0, 0.5)`
+  - ✅ **code** (percent alpha): `rgba(255, 0, 0, 50%)`
+  - ✅ **text**: rgba(255, 0, 0, 0.5)
+- ✅ hsla (alpha channel):
+  - ✅ **code**: `hsla(120, 100%, 50%, 0.25)`
+  - ✅ **text**: hsla(120, 100%, 50%, 0.25)
+- ✅ CSS keywords:
+  - ✅ **code**: `currentColor`, `transparent`
+  - ✅ **text**: currentColor, transparent
+
+### Alpha and Keyword Format Coverage
+
+| Token form     | HTML | LaTeX | Typst | DOCX | PPTX | Notes                                                              |
+| -------------- | ---- | ----- | ----- | ---- | ---- | ------------------------------------------------------------------ |
+| `rgba()`       | full | hex   | hex   | hex  | hex  | Non-HTML targets render the opaque colour and warn once.           |
+| `hsla()`       | full | hex   | hex   | hex  | hex  | Non-HTML targets render the opaque colour and warn once.           |
+| `currentColor` | full | -     | -     | -    | -    | Skipped outside HTML (one-time warning); no opaque equivalent.     |
+| `transparent`  | full | -     | -     | -    | -    | Skipped outside HTML (one-time warning); the swatch is invisible.  |
+
+## Bulk JSON Export
+
+The extension can write every detected colour to a JSON file for downstream tooling (audits, palette extraction, design systems).
+Enable bulk export via `extensions.preview-colour.json`.
+Set the value to `true` to write `preview-colour.json` in the project root, or supply a custom path:
+
+```yaml
+extensions:
+  preview-colour:
+    json: my-colours.json
+```
+
+The exported file has the following shape:
+
+```json
+{
+  "extension": "preview-colour",
+  "count": 3,
+  "colours": [
+    {
+      "original": "#FF0000",
+      "hex": "#FF0000",
+      "css": "#FF0000",
+      "source": "code"
+    },
+    {
+      "original": "rgba(255, 0, 0, 0.5)",
+      "hex": "#FF0000",
+      "alpha": "80",
+      "css": "rgba(255, 0, 0, 0.5)",
+      "source": "code"
+    },
+    {
+      "original": "currentColor",
+      "keyword": "currentColor",
+      "css": "currentColor",
+      "source": "text"
+    }
+  ]
+}
+```
+
+The `source` field reports where the colour was detected:
+
+- `code` for inline-code matches.
+- `text` for single-token text matches.
+- `text-multitoken` for function-style colours that span several Pandoc Str/Space tokens.
+
+## Performance
+
+The filter scans every `Str` and `Code` inline element in the document.
+Cost is linear in the number of inline tokens; documents with thousands of paragraphs may add measurable overhead.
+Disable scanning where it is not needed by setting `code: false` or `text: false`.
+
+## Deprecation Timeline
+
+The top-level `preview-colour:` configuration block is **deprecated** since v1.4.0 (2026-02-21) in favour of the namespaced `extensions.preview-colour:` block.
+The current behaviour is:
+
+| Version | Behaviour                                                                          |
+| ------- | ---------------------------------------------------------------------------------- |
+| 1.4.x   | Both forms accepted; first deprecated invocation emits a one-time warning.         |
+| 1.5.x   | Both forms accepted; warning unchanged.                                            |
+| 1.6.0   | Both forms accepted; warning unchanged. Documentation flagged for removal at v2.0. |
+| 2.0.0   | Top-level form removed. Use `extensions.preview-colour:` exclusively.              |
 
 ## Examples
 

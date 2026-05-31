@@ -17,8 +17,25 @@ local colour = require(quarto.utils.resolve_path("_modules/colour.lua"):gsub("%.
 --- @type boolean
 local deprecation_warning_shown = false
 
+--- Flag to track if the alpha-loss warning has been shown.
+--- @type boolean
+local alpha_loss_warning_shown = false
+
+--- Flag to track if the keyword-unsupported warning has been shown.
+--- @type boolean
+local keyword_unsupported_warning_shown = false
+
+--- Optional file path for bulk JSON export of detected colours.
+--- @type string|nil
+local json_export_file = nil
+
+--- Accumulator for detected colours when bulk export is enabled.
+--- Each entry: { original = "...", hex = "#RRGGBB", alpha = nil|"##", format = "hex6|rgb|...", source = "code|text" }
+--- @type table[]
+local detected_colours = {}
+
 --- Default configuration for preview colour features.
---- @type table<string, boolean>
+--- @type table<string, any>
 local preview_colour_meta = {
   ["text"] = false,
   ["code"] = true
@@ -33,6 +50,86 @@ local default_glyphs = {
   ["docx"] = "●",
   ["pptx"] = "●"
 }
+
+--- CSS keyword colours with no resolvable preview value.
+--- Used for `currentColor` and `transparent`, which require special rendering paths
+--- because they cannot be reduced to an opaque hex swatch.
+--- @type table<string, boolean>
+local keyword_colours = {
+  ["currentcolor"] = true,
+  ["transparent"] = true
+}
+
+--- Record a detected colour for the bulk JSON export when enabled.
+--- @param spec table Colour spec table.
+--- @param source string Source kind: "code", "text", or "text-multitoken".
+local function record_detected(spec, source)
+  if json_export_file == nil then return end
+  table.insert(detected_colours, {
+    original = spec.original or spec.css or spec.hex,
+    hex = spec.hex,
+    alpha = spec.alpha,
+    keyword = spec.keyword,
+    css = spec.css,
+    source = source
+  })
+end
+
+--- Clamp a number into the [0, 1] range.
+--- @param value number Input value.
+--- @return number Clamped value.
+local function clamp01(value)
+  if value < 0 then return 0 end
+  if value > 1 then return 1 end
+  return value
+end
+
+--- Parse an alpha component from a CSS value (number 0-1 or `<n>%`).
+--- @param raw string|nil Raw alpha token.
+--- @return number Alpha in [0, 1]; defaults to 1 when `raw` is nil or unparseable.
+local function parse_alpha(raw)
+  if raw == nil or raw == '' then
+    return 1
+  end
+  local stripped = raw:gsub('%s+', '')
+  local percent = stripped:match('^([%d%.]+)%%$')
+  if percent then
+    return clamp01(tonumber(percent) / 100)
+  end
+  local number = tonumber(stripped)
+  if number == nil then
+    return 1
+  end
+  return clamp01(number)
+end
+
+--- Format an alpha component as a two-digit hex pair.
+--- @param alpha number Alpha in [0, 1].
+--- @return string Two-digit uppercase hex.
+local function alpha_to_hex(alpha)
+  local n = math.floor(alpha * 255 + 0.5)
+  return string.upper(string.format('%02x', n))
+end
+
+--- Convert an `rgba(r, g, b, a)` string to an opaque hex and alpha hex pair.
+--- @param css string CSS rgba value.
+--- @return string|nil, string|nil Hex (`#RRGGBB`) and alpha hex (`##`), or nil if unparseable.
+local function rgba_to_hex(css)
+  local r, g, b, a = css:match('rgba?%s*%(%s*(%d+)%s*,%s*(%d+)%s*,%s*(%d+)%s*,%s*([%d%.%%]+)%s*%)')
+  if not r then return nil, nil end
+  local hex = string.upper(string.format('#%02x%02x%02x', tonumber(r), tonumber(g), tonumber(b)))
+  return hex, alpha_to_hex(parse_alpha(a))
+end
+
+--- Convert an `hsla(h, s%, l%, a)` string to an opaque hex and alpha hex pair.
+--- @param css string CSS hsla value.
+--- @return string|nil, string|nil Hex (`#RRGGBB`) and alpha hex (`##`), or nil if unparseable.
+local function hsla_to_hex(css)
+  local h, s, l, a = css:match('hsla?%s*%(%s*(%d+)%s*,%s*(%d+)%%%s*,%s*(%d+)%%%s*,%s*([%d%.%%]+)%s*%)')
+  if not h then return nil, nil end
+  local opaque = colour.HSL_to_HTML('hsl(' .. h .. ', ' .. s .. '%, ' .. l .. '%)')
+  return opaque, alpha_to_hex(parse_alpha(a))
+end
 
 --- Check for deprecated top-level preview-colour configuration and emit warning if found.
 --- @param meta table<string, any> Document metadata table.
@@ -123,20 +220,22 @@ end
 
 
 --- Create colour preview mark for HTML format.
---- @param hex string Hex colour code.
+--- Accepts either an opaque hex colour or a CSS colour string (for keywords/alpha).
+--- @param css string CSS colour value to apply (e.g. `#FF0000`, `rgba(...)`, `currentColor`, `transparent`).
+--- @param label string Human-readable label for the title/aria attributes and copy buffer.
 --- @param glyph string Glyph character to use for the preview.
 --- @return string HTML colour preview mark.
-local function create_html_colour_mark(hex, glyph)
+local function create_html_colour_mark(css, label, glyph)
   return '<span style="font-size: 0.8lh; font-family: system-ui, sans-serif; color: ' ..
-      hex ..
+      css ..
       '; cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; position: relative;" title="Colour preview: ' ..
-      hex ..
+      label ..
       ' (click to copy)" aria-label="Colour preview: ' ..
-      hex ..
+      label ..
       ' (click to copy)" onclick="navigator.clipboard.writeText(\'' ..
-      hex ..
+      label ..
       '\').then(() => { const span = this; const originalTitle = span.title; span.title = \'Copied: ' ..
-      hex ..
+      label ..
       '\'; let tooltip = document.createElement(\'div\'); tooltip.textContent = \'Copied!\'; tooltip.style.cssText = \'position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:4px 8px;border-radius:4px;font-size:12px;font-family:sans-serif;white-space:nowrap;z-index:9999;box-shadow:0 2px 4px rgba(0,0,0,0.3);pointer-events:none;\'; span.appendChild(tooltip); setTimeout(() => { span.title = originalTitle; if (span.contains(tooltip)) span.removeChild(tooltip); }, 1500); }).catch(() => console.error(\'Failed to copy colour code\'));">' .. glyph .. '</span>'
 end
 
@@ -180,48 +279,118 @@ local function create_pptx_colour_mark(hex, glyph)
 end
 
 --- Create colour preview mark for the specified format.
---- @param hex string Hex colour code.
+--- Supports the legacy hex-only signature plus alpha and keyword colours.
+--- For keyword colours (`currentColor`, `transparent`) and alpha-bearing colours,
+--- only HTML produces a faithful preview; other formats render an opaque hex when
+--- possible and skip the swatch (with a one-time warning) when there is no hex.
+--- @param spec table|string Colour specification table, or a hex string for back-compat.
+---        Table fields: { hex = "#RRGGBB"|nil, alpha = "##"|nil, css = "..."|nil, keyword = "..."|nil, original = "..." }
 --- @param format string Output format (html, latex, typst, docx, pptx).
 --- @param glyph string Glyph character to use for the preview.
---- @return string Colour preview mark for the format.
-local function create_colour_mark(hex, format, glyph)
+--- @return string|nil Colour preview mark for the format, or nil when no preview is possible.
+local function create_colour_mark(spec, format, glyph)
+  if type(spec) == 'string' then
+    spec = { hex = spec, original = spec }
+  end
+
   local colour_mark_functions = {
-    html = create_html_colour_mark,
     latex = create_latex_colour_mark,
     typst = create_typst_colour_mark,
     docx = create_docx_colour_mark,
     pptx = create_pptx_colour_mark
   }
 
+  if format == 'html' then
+    local css = spec.css or spec.keyword
+    if css == nil and spec.hex then
+      if spec.alpha then
+        css = spec.hex .. spec.alpha
+      else
+        css = spec.hex
+      end
+    end
+    if css == nil then return nil end
+    return create_html_colour_mark(css, spec.original or css, glyph)
+  end
+
   local create_mark = colour_mark_functions[format]
-  if create_mark then
-    return create_mark(hex, glyph)
-  else
+  if not create_mark then
     error('Unsupported format: ' .. format)
   end
+
+  if spec.keyword then
+    if not keyword_unsupported_warning_shown then
+      log.log_warning(
+        EXTENSION_NAME,
+        'Keyword colour "' .. spec.keyword .. '" has no preview in ' .. format ..
+        '; only HTML renders these faithfully.'
+      )
+      keyword_unsupported_warning_shown = true
+    end
+    return nil
+  end
+
+  if spec.alpha and not alpha_loss_warning_shown then
+    log.log_warning(
+      EXTENSION_NAME,
+      'Alpha channel is not preserved in ' .. format ..
+      '; rendering the opaque colour for "' .. (spec.original or spec.hex or '') .. '".'
+    )
+    alpha_loss_warning_shown = true
+  end
+
+  if spec.hex == nil then return nil end
+  return create_mark(spec.hex, glyph)
+end
+
+--- Convert a recognised colour token to a structured spec.
+--- @param token string The matched colour text.
+--- @param token_format string Pattern name (`hex6`, `rgba`, `keyword`, ...).
+--- @return table|nil Spec table with `hex`, `alpha`, `css`, `keyword`, or nil if unparseable.
+local function build_colour_spec(token, token_format)
+  if token_format == 'keyword' then
+    return { keyword = token, css = token, original = token }
+  end
+  if token_format == 'rgba' then
+    local hex, alpha = rgba_to_hex(token)
+    if not hex then return nil end
+    return { hex = hex, alpha = alpha, css = token, original = token }
+  end
+  if token_format == 'hsla' then
+    local hex, alpha = hsla_to_hex(token)
+    if not hex then return nil end
+    return { hex = hex, alpha = alpha, css = token, original = token }
+  end
+  local hex = colour.to_html(token, token_format)
+  if not hex then return nil end
+  return { hex = hex, css = hex, original = token }
 end
 
 --- Extract all colour matches from element text with positions.
 --- Supports multiple colours and colours embedded within other text.
 --- @param element table Pandoc element containing text to analyse.
 --- @return table Array of match objects sorted by start position.
----         Each match: { hex = "#RRGGBB", original = "...", start_pos = n, end_pos = m, format = "hex6" }
+---         Each match: { spec = {...}, original = "...", start_pos = n, end_pos = m, format = "hex6" }
 local function get_all_colours(element)
   local matches = {}
   local text = element.text
 
-  -- Pattern definitions with priority (hex6 before hex3 to avoid partial matches)
+  -- Pattern definitions with priority (specific functions before bare hex/named).
+  -- `rgba`/`hsla` come before `rgb`/`hsl` so the alpha form wins.
   local patterns = {
     { name = 'hex6',        pattern = '#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]' },
+    { name = 'rgba',        pattern = 'rgba%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*,%s*[%d%.%%]+%s*%)' },
+    { name = 'hsla',        pattern = 'hsla%s*%(%s*%d+%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*,%s*[%d%.%%]+%s*%)' },
     { name = 'rgb',         pattern = 'rgb%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%)' },
     { name = 'rgb_percent', pattern = 'rgb%s*%(%s*%d+%s*%%%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*%)' },
-    { name = 'hsl',         pattern = 'hsl%s*%(%s*%d+%s*,%s*%d+%s*%%,%s*%d+%s*%%s*%)' },
+    { name = 'hsl',         pattern = 'hsl%s*%(%s*%d+%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*%)' },
     { name = 'hwb',         pattern = 'hwb%s*%(%s*%d+%s+%d+%%%s+%d+%%%s*%)' },
-    { name = 'hex3',        pattern = '#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]' }, -- Before named to avoid false positives
-    { name = 'named',       pattern = '[a-zA-Z]+', validate = colour.is_named_colour } -- Last: requires validation
+    { name = 'hex3',        pattern = '#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]' }, -- Before named to avoid false positives.
+    { name = 'keyword',     pattern = '[a-zA-Z]+',                            validate = function(t) return keyword_colours[t:lower()] ~= nil end },
+    { name = 'named',       pattern = '[a-zA-Z]+',                            validate = colour.is_named_colour } -- Last: requires validation.
   }
 
-  -- Track covered positions to prevent overlaps
+  -- Track covered positions to prevent overlaps.
   local covered = {}
 
   --- Check if a position range overlaps with any covered range.
@@ -245,21 +414,22 @@ local function get_all_colours(element)
       local start_pos, end_pos = string.find(text, pat.pattern, pos)
       if not start_pos then break end
 
-      -- Check if position is already covered by a previous match
+      -- Check if position is already covered by a previous match.
       if not is_position_covered(start_pos, end_pos) then
         local matched_text = string.sub(text, start_pos, end_pos)
 
-        -- If pattern has a validation function, use it to verify the match
+        -- If pattern has a validation function, use it to verify the match.
         local is_valid = true
         if pat.validate then
           is_valid = pat.validate(matched_text)
         end
 
         if is_valid then
-          local hex = colour.to_html(matched_text, pat.name)
-          if hex then
+          local spec = build_colour_spec(matched_text, pat.name)
+          if spec then
             table.insert(matches, {
-              hex = hex,
+              spec = spec,
+              hex = spec.hex,
               original = matched_text,
               start_pos = start_pos,
               end_pos = end_pos,
@@ -274,7 +444,7 @@ local function get_all_colours(element)
     end
   end
 
-  -- Sort by start position for sequential processing
+  -- Sort by start position for sequential processing.
   table.sort(matches, function(a, b) return a.start_pos < b.start_pos end)
 
   return matches
@@ -311,9 +481,9 @@ local function reconstruct_code_with_marks(element, matches, format, language, g
   local result_text = ""
   local last_pos = 1
 
-  -- Build the content with embedded colour marks
+  -- Build the content with embedded colour marks.
   for _, match in ipairs(matches) do
-    -- Add text before this colour
+    -- Add text before this colour.
     if match.start_pos > last_pos then
       local prefix = string.sub(text, last_pos, match.start_pos - 1)
       if format == "html" then
@@ -326,7 +496,7 @@ local function reconstruct_code_with_marks(element, matches, format, language, g
       result_text = result_text .. prefix
     end
 
-    -- Add the colour code
+    -- Add the colour code.
     local colour_text = match.original
     if format == "html" then
       colour_text = escape_html(colour_text)
@@ -337,13 +507,16 @@ local function reconstruct_code_with_marks(element, matches, format, language, g
     end
     result_text = result_text .. colour_text
 
-    -- Add the colour mark
-    result_text = result_text .. create_colour_mark(match.hex, format, glyph)
+    -- Add the colour mark (may be nil for keyword/alpha colours outside HTML).
+    local mark = create_colour_mark(match.spec, format, glyph)
+    if mark then
+      result_text = result_text .. mark
+    end
 
     last_pos = match.end_pos + 1
   end
 
-  -- Add remaining text after last colour
+  -- Add remaining text after last colour.
   if last_pos <= #text then
     local suffix = string.sub(text, last_pos)
     if format == "html" then
@@ -356,7 +529,7 @@ local function reconstruct_code_with_marks(element, matches, format, language, g
     result_text = result_text .. suffix
   end
 
-  -- Wrap in format-specific code markup
+  -- Wrap in format-specific code markup.
   if format == "html" then
     return pandoc.RawInline(language, '<code>' .. result_text .. '</code>')
   elseif format == "latex" then
@@ -364,7 +537,7 @@ local function reconstruct_code_with_marks(element, matches, format, language, g
   end
 
   -- For Typst and OpenXML, keep the split approach as they have limitations
-  -- with embedding marks inside code content
+  -- with embedding marks inside code content.
   local result = {}
   last_pos = 1
   for _, match in ipairs(matches) do
@@ -375,8 +548,10 @@ local function reconstruct_code_with_marks(element, matches, format, language, g
       end
     end
     table.insert(result, pandoc.Code(match.original, element.attr))
-    local colour_mark = create_colour_mark(match.hex, format, glyph)
-    table.insert(result, pandoc.RawInline(language, colour_mark))
+    local colour_mark = create_colour_mark(match.spec, format, glyph)
+    if colour_mark then
+      table.insert(result, pandoc.RawInline(language, colour_mark))
+    end
     last_pos = match.end_pos + 1
   end
   if last_pos <= #text then
@@ -416,8 +591,10 @@ local function reconstruct_str_with_marks(element, matches, format, language, gl
       end
 
       table.insert(result, pandoc.Str(match.original))
-      local colour_mark = create_colour_mark(match.hex, format, glyph)
-      table.insert(result, pandoc.RawInline(language, colour_mark))
+      local colour_mark = create_colour_mark(match.spec, format, glyph)
+      if colour_mark then
+        table.insert(result, pandoc.RawInline(language, colour_mark))
+      end
 
       last_pos = match.end_pos + 1
     end
@@ -432,7 +609,7 @@ local function reconstruct_str_with_marks(element, matches, format, language, gl
     return pandoc.Span(result)
   end
 
-  -- For LaTeX/Typst/HTML, build a single raw inline with escaping
+  -- For LaTeX/Typst/HTML, build a single raw inline with escaping.
   local result_text = ""
   local last_pos = 1
 
@@ -450,7 +627,10 @@ local function reconstruct_str_with_marks(element, matches, format, language, gl
       colour_text = str.escape_text(colour_text, format)
     end
     result_text = result_text .. colour_text
-    result_text = result_text .. create_colour_mark(match.hex, format, glyph)
+    local mark = create_colour_mark(match.spec, format, glyph)
+    if mark then
+      result_text = result_text .. mark
+    end
 
     last_pos = match.end_pos + 1
   end
@@ -489,6 +669,10 @@ local function add_colour_mark(element)
   end
 
   local glyph = get_glyph_for_format(format)
+  local source = element.t == "Code" and "code" or "text"
+  for _, match in ipairs(matches) do
+    record_detected(match.spec, source)
+  end
 
   if element.t == "Code" then
     return reconstruct_code_with_marks(element, matches, format, language, glyph)
@@ -532,14 +716,30 @@ local function get_colour_preview_meta(meta)
     end
   end
 
+  -- Optional bulk JSON export of detected colours.
+  -- Mirrors the lua-env JSON feature: `true` writes to `preview-colour.json`,
+  -- a string sets a custom path, anything falsy disables it.
+  local json_value = meta_mod.get_metadata_value(meta, EXTENSION_NAME, 'json')
+  if not str.is_empty(json_value) then
+    if json_value == 'true' then
+      json_export_file = 'preview-colour.json'
+    elseif json_value == 'false' then
+      json_export_file = nil
+    else
+      json_export_file = json_value
+    end
+  end
+
   meta['extensions']['preview-colour'] = {
     ["text"] = preview_colour_text,
     ["code"] = preview_colour_code,
-    ["glyph"] = glyph_config
+    ["glyph"] = glyph_config,
+    ["json"] = json_export_file
   }
   preview_colour_meta = meta['extensions']['preview-colour']
   return meta
 end
+
 
 --- Process string elements to add colour previews in text.
 --- @param element table Pandoc Str element.
@@ -567,7 +767,9 @@ end
 --- @type table<string, string>
 local multi_token_starters = {
   ["rgb("] = "rgb",
+  ["rgba("] = "rgba",
   ["hsl("] = "hsl",
+  ["hsla("] = "hsla",
   ["hwb("] = "hwb"
 }
 
@@ -585,10 +787,13 @@ end
 
 --- Try to parse a complete colour from joined text.
 --- @param text string The joined text to parse.
---- @return string|nil, string|nil The hex colour and format name, or nil if not a valid colour.
+--- @return table|nil, string|nil The colour spec table and pattern name, or nil if not a valid colour.
 local function try_parse_colour(text)
-  -- Try each pattern that could match the joined text
+  -- Try each pattern that could match the joined text.
+  -- Alpha-bearing forms come first so they win over their opaque counterparts.
   local patterns = {
+    { name = 'rgba',        pattern = '^rgba%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*,%s*[%d%.%%]+%s*%)$' },
+    { name = 'hsla',        pattern = '^hsla%s*%(%s*%d+%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*,%s*[%d%.%%]+%s*%)$' },
     { name = 'rgb',         pattern = '^rgb%s*%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%)$' },
     { name = 'rgb_percent', pattern = '^rgb%s*%(%s*%d+%s*%%%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*%)$' },
     { name = 'hsl',         pattern = '^hsl%s*%(%s*%d+%s*,%s*%d+%s*%%%s*,%s*%d+%s*%%%s*%)$' },
@@ -597,9 +802,9 @@ local function try_parse_colour(text)
 
   for _, pat in ipairs(patterns) do
     if string.match(text, pat.pattern) then
-      local hex = colour.to_html(text, pat.name)
-      if hex then
-        return hex, pat.name
+      local spec = build_colour_spec(text, pat.name)
+      if spec then
+        return spec, pat.name
       end
     end
   end
@@ -628,75 +833,91 @@ local function process_inlines(inlines)
   while i <= #inlines do
     local elem = inlines[i]
 
-    -- Check if this is a Str that could start a multi-token colour
+    -- Check if this is a Str that could start a multi-token colour.
     if elem.t == "Str" then
       local starter = get_multitoken_starter(elem.text)
 
       if starter then
-        -- Try to collect tokens until we find a closing parenthesis
+        -- Collect tokens until we find a closing parenthesis.
         local collected = { elem.text }
         local j = i + 1
-        local found_close = string.find(elem.text, ")", 1, true) ~= nil
+        local close_in = string.find(elem.text, ")", 1, true) ~= nil and 1 or nil
 
-        while j <= #inlines and not found_close do
+        while j <= #inlines and not close_in do
           local next_elem = inlines[j]
 
           if next_elem.t == "Str" then
             table.insert(collected, next_elem.text)
             if string.find(next_elem.text, ")", 1, true) then
-              found_close = true
+              close_in = #collected
             end
           elseif next_elem.t == "Space" then
             table.insert(collected, " ")
           else
-            -- Non-Str/Space element breaks the sequence
+            -- Non-Str/Space element breaks the sequence.
             break
           end
 
           j = j + 1
         end
 
-        if found_close then
-          -- Join collected tokens and try to parse as colour
+        if close_in then
+          -- The last collected token may carry text after the `)` (punctuation,
+          -- following words, ...). Split it so the colour candidate ends at `)`
+          -- and the trailer is reinserted into the output stream.
+          local last_index = close_in
+          local last_text = collected[last_index]
+          local paren_pos = string.find(last_text, ")", 1, true)
+          local trailing_text = string.sub(last_text, paren_pos + 1)
+          collected[last_index] = string.sub(last_text, 1, paren_pos)
+
           local joined = table.concat(collected)
-          local hex, _ = try_parse_colour(joined)
+          local spec, _ = try_parse_colour(joined)
 
-          if hex then
-            -- Successfully parsed a colour - create the replacement
-            local colour_mark = create_colour_mark(hex, format, glyph)
+          if spec then
+            spec.original = joined
+            record_detected(spec, "text-multitoken")
+            local colour_mark = create_colour_mark(spec, format, glyph)
 
-            if language == "openxml" then
-              -- For OpenXML, use Str + RawInline
-              result:insert(pandoc.Str(joined))
-              result:insert(pandoc.RawInline(language, colour_mark))
+            if colour_mark == nil then
+              -- No preview possible for this format/spec; keep the original element.
+              result:insert(elem)
+              i = i + 1
             else
-              -- For HTML/LaTeX/Typst, create RawInline with text + mark
-              local text_escaped = joined
-              if format == "latex" or format == "typst" then
-                text_escaped = str.escape_text(joined, format)
+              -- Compute the next index based on which token contained `)`.
+              local consumed_to = i + (last_index - 1)
+              if language == "openxml" then
+                result:insert(pandoc.Str(joined))
+                result:insert(pandoc.RawInline(language, colour_mark))
+              else
+                local text_escaped = joined
+                if format == "latex" or format == "typst" then
+                  text_escaped = str.escape_text(joined, format)
+                end
+                result:insert(pandoc.RawInline(language, text_escaped .. colour_mark))
               end
-              result:insert(pandoc.RawInline(language, text_escaped .. colour_mark))
+              if trailing_text ~= "" then
+                result:insert(pandoc.Str(trailing_text))
+              end
+              i = consumed_to + 1
             end
-
-            -- Skip all consumed elements
-            i = j
           else
-            -- Not a valid colour, keep original element
+            -- Not a valid colour, keep original element.
             result:insert(elem)
             i = i + 1
           end
         else
-          -- No closing paren found, keep original element
+          -- No closing paren found, keep original element.
           result:insert(elem)
           i = i + 1
         end
       else
-        -- Not a starter, keep original element
+        -- Not a starter, keep original element.
         result:insert(elem)
         i = i + 1
       end
     else
-      -- Not a Str element, keep as-is
+      -- Not a Str element, keep as-is.
       result:insert(elem)
       i = i + 1
     end
@@ -705,12 +926,44 @@ local function process_inlines(inlines)
   return result
 end
 
+--- Write the collected colour list to JSON when bulk export is enabled.
+--- @param doc table Pandoc document (returned unchanged).
+--- @return table The unchanged Pandoc document.
+local function export_detected_colours(doc)
+  if json_export_file == nil or #detected_colours == 0 then
+    return doc
+  end
+
+  local payload = {
+    extension = EXTENSION_NAME,
+    count = #detected_colours,
+    colours = detected_colours
+  }
+
+  local ok, encoded = pcall(quarto.json.encode, payload)
+  if not ok then
+    log.log_error(EXTENSION_NAME, 'Failed to encode JSON payload: ' .. tostring(encoded))
+    return doc
+  end
+
+  local file, err = io.open(json_export_file, 'w')
+  if not file then
+    log.log_error(EXTENSION_NAME, 'Failed to write JSON export to "' .. json_export_file .. '": ' .. (err or 'unknown error'))
+    return doc
+  end
+  file:write(encoded)
+  file:close()
+  log.log_output(EXTENSION_NAME, 'Exported ' .. #detected_colours .. ' colour(s) to: ' .. json_export_file)
+  return doc
+end
+
 --- Pandoc filter configuration.
 --- Defines the processing pipeline for different pandoc elements.
 --- @return table Filter table for Pandoc.
 return {
   { Meta = get_colour_preview_meta },
-  { Inlines = process_inlines }, -- Process multi-token colours first
+  { Inlines = process_inlines }, -- Process multi-token colours first.
   { Str = process_str },
-  { Code = process_code }
+  { Code = process_code },
+  { Pandoc = export_detected_colours } -- Final pass: write JSON export when configured.
 }
