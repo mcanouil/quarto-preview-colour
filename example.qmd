@@ -147,10 +147,11 @@ extensions:
 - ✅ **text**: currentColor
 - ✅ **text**: transparent
 
-> [!NOTE]
-> Alpha-bearing colours render faithfully in HTML.
-> In LaTeX, Typst, DOCX, and PPTX, the opaque colour is shown and a one-time warning is emitted.
-> The `currentColor` and `transparent` keywords render only in HTML; other formats skip the preview with a one-time warning.
+::: {.callout-note}
+Alpha-bearing colours render faithfully in HTML.
+In LaTeX, Typst, DOCX, and PPTX, the opaque colour is shown and a one-time warning is emitted.
+The `currentColor` and `transparent` keywords render only in HTML; other formats skip the preview with a one-time warning.
+:::
 
 ## Multiple and Embedded Colours
 
