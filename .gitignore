@@ -10,3 +10,5 @@
 *.pptx
 /example-colours.json
 /preview-colour.json
+/.quarto/
+**/*.quarto_ipynb

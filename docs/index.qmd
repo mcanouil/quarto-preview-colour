@@ -1,0 +1,82 @@
+---
+title: "Preview Colour"
+subtitle: "A swatch beside every colour code."
+description: "What the preview-colour extension does, how to enable it, and the colour formats it recognises."
+authors:
+  - name: "Mickaël CANOUIL, _Ph.D._"
+    orcid: "0000-0002-3396-4549"
+    url: "https://mickael.canouil.fr"
+---
+
+A document about colour is full of values nobody can read.
+`#441100` says nothing; `rgb(10, 100, 200)` says a little less.
+
+`preview-colour` draws the colour next to the code that names it, so a palette, a theme file, or a style guide can be read rather than decoded.
+
+## Installation
+
+```bash
+quarto add {{< var extension.reference >}}
+```
+
+This will install the extension under the `_extensions` subdirectory.
+If you are using version control, you will want to check in this directory.
+
+Or install it from your editor with [Quarto Wizard](https://m.canouil.dev/quarto-wizard):
+
+::: {.btn-group role="group" aria-label="Quarto Wizard installer options"}
+
+[Visual Studio Code](vscode://mcanouil.quarto-wizard/install?repo={{< var extension.wizard-reference >}}){.btn .btn-outline-primary title="Install {{< var extension.reference >}} in Visual Studio Code using the Quarto Wizard extension."}
+[Positron](positron://mcanouil.quarto-wizard/install?repo={{< var extension.wizard-reference >}}){.btn .btn-outline-primary title="Install {{< var extension.reference >}} in Positron using the Quarto Wizard extension."}
+[VSCodium](vscodium://mcanouil.quarto-wizard/install?repo={{< var extension.wizard-reference >}}){.btn .btn-outline-primary title="Install {{< var extension.reference >}} in VSCodium using the Quarto Wizard extension."}
+
+:::
+
+## Quick start
+
+Enable the filter:
+
+```yaml
+filters:
+  - path: preview-colour
+    at: post-quarto
+```
+
+Then write colours as you would anyway:
+
+```markdown
+The brand colour is `#b22222`, with `rgb(10, 100, 200)` for links.
+```
+
+The brand colour is `#b22222`, with `rgb(10, 100, 200)` for links.
+
+Inline code is scanned by default; prose is not, until you ask:
+
+```yaml
+extensions:
+  preview-colour:
+    code: true
+    text: true
+```
+
+This site enables both, so rebeccapurple in ordinary prose is marked too.
+
+::: {.callout-important}
+A colour code in inline code has to stand alone.
+`` `#441100` `` is recognised; `` `"My colour is #441100"` `` and `` `["#441100", "#114400"]` `` are not.
+:::
+
+See the [Reference](reference.qmd) for every format and option, and the [Examples](examples.qmd) for each of them rendered.
+
+## Where it works
+
+HTML, RevealJS, LaTeX, Beamer, Typst, Word, and PowerPoint.
+
+Each gets a glyph appropriate to it, and the [Reference](reference.qmd#format-coverage) records which formats can show transparency and which fall back to the opaque colour.
+
+## Links
+
+- [Reference](reference.qmd) for every colour format and option.
+- [Examples](examples.qmd) for swatches you can see.
+- [Changelog](changelog.qmd) for what each release changed.
+- [Source and issues](https://github.com/mcanouil/quarto-preview-colour) on GitHub.
