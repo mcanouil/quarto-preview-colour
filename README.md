@@ -9,7 +9,7 @@ It recognises named colours, hex, `rgb()`, `rgba()`, `hsl()`, `hsla()`, `hwb()`,
 You can install this extension using the Quarto CLI:
 
 ```bash
-quarto add mcanouil/quarto-preview-colour@1.6.1
+quarto add mcanouil/quarto-preview-colour@1.6.2
 ```
 
 This will install the extension under the `_extensions` subdirectory.
