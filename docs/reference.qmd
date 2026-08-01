@@ -40,6 +40,11 @@ extensions:
 
 : Document and project options. {.striped .hover tbl-colwidths="[12,18,14,56]"}
 
+::: {.callout-important}
+A `false` written under `extensions.preview-colour` is read as unset, so the option falls back to its default.
+`text: false` matches its own default and takes effect; `code: false` does not, and inline code stays scanned.
+:::
+
 ::: {.callout-warning}
 The top-level `preview-colour:` block is deprecated in favour of `extensions.preview-colour:`, and warns once per render.
 It is due for removal at 2.0.0.
@@ -76,7 +81,7 @@ In prose, with `text: true`, a colour is recognised as a token, and function for
 
 : The formats the filter recognises. {.striped .hover tbl-colwidths="[32,68]"}
 
-Over 140 CSS named colours are covered.
+All 148 CSS named colours are covered.
 
 ## Glyphs
 
@@ -164,7 +169,7 @@ Writes every colour found, for an audit or a palette extraction:
 Every `Str` and `Code` inline element is scanned, so the cost grows with the number of inline tokens rather than the number of colours.
 A document of a few thousand paragraphs may notice.
 
-Turn off the scan you do not need:
+The prose scan is off unless you ask for it, so leave `text` alone in a long document:
 
 ```yaml
 extensions:
