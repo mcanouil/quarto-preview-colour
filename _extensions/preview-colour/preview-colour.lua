@@ -146,16 +146,19 @@ end
 --- @param meta table<string, any> Document metadata table.
 --- @return boolean The option value as a boolean.
 local function get_preview_colour_option(key, meta)
+  -- Both sources hand back a string, and the callers compare against a boolean,
+  -- so coerce here rather than leaving the type to depend on where the value
+  -- came from.
   -- Check new nested structure: extensions.preview-colour.key
   local meta_value = meta_mod.get_metadata_value(meta, 'preview-colour', key)
   if not str.is_empty(meta_value) then
-    return meta_value
+    return meta_value:lower() ~= 'false'
   end
 
   -- Check deprecated top-level structure: preview-colour.key (with warning)
   local deprecated_value = check_deprecated_config(meta, key)
   if deprecated_value ~= nil then
-    return deprecated_value
+    return tostring(deprecated_value):lower() ~= 'false'
   end
 
   -- Return default values: code: true, text: false
@@ -728,6 +731,12 @@ local function get_colour_preview_meta(meta)
     else
       json_export_file = json_value
     end
+  end
+
+  -- A document configured only through the deprecated top-level block has no
+  -- `extensions` key at all, so the table has to exist before writing into it.
+  if meta['extensions'] == nil then
+    meta['extensions'] = {}
   end
 
   meta['extensions']['preview-colour'] = {
