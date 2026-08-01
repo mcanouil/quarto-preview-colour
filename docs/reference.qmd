@@ -8,8 +8,7 @@ description: "The complete preview-colour configuration: the two scans, the glyp
 
 ```yaml
 filters:
-  - path: preview-colour
-    at: post-quarto
+  - preview-colour
 ```
 
 On Quarto older than 1.8.21 the filter was ordered by hand instead:
