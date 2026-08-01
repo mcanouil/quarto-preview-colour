@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.6.1 (2026-08-01)
+
 ### Bug Fixes
 
 - fix: Honour `code: false` and `text: false`. A bare YAML `false` was read as an absent option, so the feature stayed on at its default, and no spelling of the value worked.
