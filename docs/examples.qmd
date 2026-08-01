@@ -1,0 +1,108 @@
+---
+title: "Examples"
+subtitle: "Every colour format, marked."
+description: "Each colour format recognised by the extension, shown in inline code and in prose, with its swatch drawn by the filter."
+---
+
+Every swatch below is drawn by the filter as this page is rendered.
+The site scans both inline code and prose:
+
+```yaml
+extensions:
+  preview-colour:
+    code: true
+    text: true
+```
+
+## Named colours
+
+In code: `red`, `rebeccapurple`, `cornflowerblue`, `darkslategray`.
+
+In prose: red, rebeccapurple, cornflowerblue, darkslategray.
+
+Both British and American spellings are recognised, so `grey` and `gray` are marked alike.
+
+## Hex
+
+In code: `#441100`, `#b22222`, `#F03`.
+
+In prose: #441100, #b22222, #F03.
+
+Short hex works as well as the six-digit form.
+
+## Functional forms
+
+In code: `rgb(10, 100, 200)`, `rgb(10,100,200)`, `rgb(100%, 20%, 100%)`.
+
+In prose: rgb(10, 100, 200), rgb(100%, 20%, 100%).
+
+In code: `hsl(240, 100%, 50%)`, `hwb(135 0% 40%)`.
+
+In prose: hsl(240, 100%, 50%), hwb(135 0% 40%).
+
+Spaces after the commas are optional in every case.
+
+## Transparency
+
+In code: `rgba(255, 0, 0, 0.5)`, `rgba(255, 0, 0, 50%)`, `hsla(120, 100%, 50%, 0.25)`.
+
+In prose: rgba(255, 0, 0, 0.5), hsla(120, 100%, 50%, 0.25).
+
+This page is HTML, so the swatches above carry their alpha.
+In a PDF, a Word file, or a deck the opaque colour is drawn instead, and the filter warns once.
+
+## Keywords
+
+In code: `currentColor`, `transparent`.
+
+In prose: currentColor, transparent.
+
+`currentColor` takes the colour of the surrounding text, and `transparent` is invisible by definition.
+Neither has an equivalent outside HTML, so both are skipped there.
+
+## What is not recognised
+
+A colour in inline code has to be the whole of it.
+
+| Written | Marked |
+| --- | --- |
+| `` `#441100` `` | Yes |
+| `` `"My colour is #441100"` `` | No |
+| `` `["#441100", "#114400"]` `` | No |
+
+: Inline code is matched whole. {.striped .hover tbl-colwidths="[48,52]"}
+
+Neither of the last two is marked above, which is the demonstration.
+
+## Choosing the glyph
+
+The swatch character is configurable, for every format at once or one at a time:
+
+```yaml
+extensions:
+  preview-colour:
+    glyph:
+      default: "●"
+      html: "&#9632;"
+      latex: '\\textbullet'
+      typst: "◆"
+```
+
+This site keeps the defaults, so the HTML swatches above are the fisheye `&#9673;`.
+
+## Exporting the colours
+
+Every colour found can be written out, for an audit or to extract a palette:
+
+```yaml
+extensions:
+  preview-colour:
+    json: my-colours.json
+```
+
+The file records the original text, the resolved hex, any alpha, and whether the colour came from code or prose.
+This site leaves it off, since it would write a file into the project on every render.
+
+## Source
+
+The repository ships a short, standalone starting point you can copy: [`example.qmd`](https://github.com/mcanouil/quarto-preview-colour/blob/main/example.qmd).

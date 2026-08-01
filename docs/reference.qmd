@@ -1,0 +1,184 @@
+---
+title: "Reference"
+subtitle: "Every option the preview-colour extension accepts."
+description: "The complete preview-colour configuration: the two scans, the glyphs, every colour format recognised, per-format coverage, and the JSON export."
+---
+
+## Enabling the filter
+
+```yaml
+filters:
+  - path: preview-colour
+    at: post-quarto
+```
+
+On Quarto older than 1.8.21 the filter was ordered by hand instead:
+
+```yaml
+filters:
+  - quarto
+  - preview-colour
+```
+
+## Options
+
+```yaml
+extensions:
+  preview-colour:
+    code: true
+    text: false
+    glyph: "●"
+    json: false
+```
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `code` | boolean | `true` | Scan inline code for colours. |
+| `text` | boolean | `false` | Scan ordinary prose for colours. |
+| `glyph` | string or object | per format | The character drawn as the swatch. |
+| `json` | boolean or string | `false` | Write every colour found to a JSON file. `true` uses `preview-colour.json`. |
+
+: Document and project options. {.striped .hover tbl-colwidths="[12,18,14,56]"}
+
+::: {.callout-important}
+A `false` written under `extensions.preview-colour` is read as unset, so the option falls back to its default.
+`text: false` matches its own default and takes effect; `code: false` does not, and inline code stays scanned.
+:::
+
+::: {.callout-warning}
+The top-level `preview-colour:` block is deprecated in favour of `extensions.preview-colour:`, and warns once per render.
+It is due for removal at 2.0.0.
+:::
+
+## Where a colour is recognised
+
+A colour in inline code has to be the whole of it.
+
+| Written | Recognised |
+| --- | --- |
+| `` `#441100` `` | Yes |
+| `` `"My colour is #441100"` `` | No |
+| `` `["#441100", "#114400"]` `` | No |
+
+: Inline code is matched whole. {.striped .hover tbl-colwidths="[45,55]"}
+
+In prose, with `text: true`, a colour is recognised as a token, and function forms are matched across the several tokens Pandoc splits them into.
+
+## Colour formats
+
+| Form | Example |
+| --- | --- |
+| Named, CSS Level 4 | `red`, `rebeccapurple`, `cornflowerblue`, and the `gray`/`grey` pair |
+| Hex | `#441100` |
+| Short hex | `#F03` |
+| `rgb()` | `rgb(10, 100, 200)`, or without spaces |
+| `rgb()` with percentages | `rgb(100%, 20%, 100%)` |
+| `rgba()` | `rgba(255, 0, 0, 0.5)`, or with a percentage alpha |
+| `hsl()` | `hsl(240, 100%, 50%)` |
+| `hsla()` | `hsla(120, 100%, 50%, 0.25)` |
+| `hwb()` | `hwb(135 0% 40%)` |
+| Keywords | `currentColor`, `transparent` |
+
+: The formats the filter recognises. {.striped .hover tbl-colwidths="[32,68]"}
+
+All 148 CSS named colours are covered.
+
+## Glyphs
+
+One glyph for every format:
+
+```yaml
+extensions:
+  preview-colour:
+    glyph: "●"
+```
+
+Or one per format:
+
+```yaml
+extensions:
+  preview-colour:
+    glyph:
+      default: "●"
+      html: "&#9632;"
+      latex: '\\textbullet'
+      typst: "◆"
+      docx: "◉"
+      pptx: "◉"
+```
+
+The LaTeX value needs single quotes and its own escaping.
+
+| Format | Default glyph | |
+| --- | --- | --- |
+| HTML | `&#9673;` | Fisheye |
+| LaTeX | `\textbullet` | Bullet |
+| Typst | `◉` | Fisheye |
+| Word | `●` | Black circle |
+| PowerPoint | `●` | Black circle |
+
+: The default glyph per format. {.striped .hover tbl-colwidths="[22,34,44]"}
+
+## Format coverage
+
+Transparency is the one thing that does not travel.
+
+| Form | HTML | LaTeX | Typst | Word | PowerPoint |
+| --- | --- | --- | --- | --- | --- |
+| Solid colours | Yes | Yes | Yes | Yes | Yes |
+| `rgba()`, `hsla()` | With alpha | Opaque | Opaque | Opaque | Opaque |
+| `currentColor` | Yes | Skipped | Skipped | Skipped | Skipped |
+| `transparent` | Yes | Skipped | Skipped | Skipped | Skipped |
+
+: What each format can show. {.striped .hover tbl-colwidths="[26,15,15,14,14,16]"}
+
+Falling back to the opaque colour, and skipping the two keywords, each warn once per render rather than per occurrence.
+
+## JSON export
+
+```yaml
+extensions:
+  preview-colour:
+    json: my-colours.json
+```
+
+Writes every colour found, for an audit or a palette extraction:
+
+```json
+{
+  "extension": "preview-colour",
+  "count": 3,
+  "colours": [
+    { "original": "#FF0000", "hex": "#FF0000", "css": "#FF0000", "source": "code" },
+    { "original": "rgba(255, 0, 0, 0.5)", "hex": "#FF0000", "alpha": "80", "css": "rgba(255, 0, 0, 0.5)", "source": "code" },
+    { "original": "currentColor", "keyword": "currentColor", "css": "currentColor", "source": "text" }
+  ]
+}
+```
+
+| `source` | Where it was found |
+| --- | --- |
+| `code` | Inline code. |
+| `text` | A single token in prose. |
+| `text-multitoken` | A function form spanning several tokens in prose. |
+
+: What the source field reports. {.striped .hover tbl-colwidths="[26,74]"}
+
+## Performance
+
+Every `Str` and `Code` inline element is scanned, so the cost grows with the number of inline tokens rather than the number of colours.
+A document of a few thousand paragraphs may notice.
+
+The prose scan is off unless you ask for it, so leave `text` alone in a long document:
+
+```yaml
+extensions:
+  preview-colour:
+    text: false
+```
+
+## Limitations
+
+- A colour in inline code must be the whole of it.
+- Transparency reaches HTML alone; elsewhere the opaque colour is drawn.
+- `currentColor` and `transparent` have no equivalent outside HTML and are skipped there.

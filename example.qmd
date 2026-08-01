@@ -7,7 +7,6 @@ author:
     url: "https://mickael.canouil.fr"
 format:
   html:
-    output-file: index
     toc: true
   typst:
     output-file: preview-colour-typst
@@ -81,92 +80,18 @@ extensions:
       pptx: "●"
 ---
 
-## Supported Colour Formats
+Colour codes are marked with a swatch of that colour, in inline code and, when enabled, in prose.
 
-### ✅ Named Colours
+```markdown
+The brand colour is `#b22222`, with `rgb(10, 100, 200)` for links.
+```
 
-- ✅ **code**: `red`
-- ✅ **code**: `rebeccapurple`
-- ✅ **code**: `cornflowerblue`
-- ✅ **text**: red
-- ✅ **text**: rebeccapurple
-- ✅ **text**: cornflowerblue
-- ✅ **British/American**: `gray` / `grey`
+The brand colour is `#b22222`, with `rgb(10, 100, 200)` for links.
 
-### ✅ Hex Codes
+Named colours, short hex, `hsl()`, `hwb()`, and the alpha forms are all recognised: `rebeccapurple`, `#F03`, `hsl(240, 100%, 50%)`, `rgba(255, 0, 0, 0.5)`.
 
-- ✅ **code**: `#441100`
-- ✅ **text**: #441100
+Scanning of prose is off by default; turn it on with `text: true` under `extensions.preview-colour`.
 
-### ✅ short hex codes
+A colour in inline code has to be the whole of it, so `` `"My colour is #441100"` `` is not marked.
 
-- ✅ **code**: `#F03`
-- ✅ **text**: #F03
-
-### ✅ RGB
-
-- ✅ **code**: `rgb(10, 100, 200)`
-- ✅ **code** (no space): `rgb(10,100,200)`
-- ✅ **text**: rgb(10, 100, 200)
-- ✅ **text** (no space): rgb(10,100,200)
-
-### ✅ RGB (%)
-
-- ✅ **code**: `rgb(100%, 20%, 100%)`
-- ✅ **code** (no space): `rgb(100%,20%,100%)`
-- ✅ **text**: rgb(100%, 20%, 100%)
-- ✅ **text** (no space): rgb(100%,20%,100%)
-
-### ✅ HWB
-
-- ✅ **code**: `hwb(135 0% 40%)`
-- ✅ **text**: hwb(135 0% 40%)
-
-### ✅ HSL
-
-- ✅ **code**: `hsl(240, 100%, 50%)`
-- ✅ **code** (no space): `hsl(240,100%,50%)`
-- ✅ **text**: hsl(240, 100%, 50%)
-- ✅ **text** (no space): hsl(240,100%,50%)
-
-### ✅ RGBA (alpha channel)
-
-- ✅ **code**: `rgba(255, 0, 0, 0.5)`
-- ✅ **code** (percent alpha): `rgba(255, 0, 0, 50%)`
-- ✅ **text**: rgba(255, 0, 0, 0.5)
-
-### ✅ HSLA (alpha channel)
-
-- ✅ **code**: `hsla(120, 100%, 50%, 0.25)`
-- ✅ **text**: hsla(120, 100%, 50%, 0.25)
-
-### ✅ Keyword colours
-
-- ✅ **code**: `currentColor`
-- ✅ **code**: `transparent`
-- ✅ **text**: currentColor
-- ✅ **text**: transparent
-
-::: {.callout-note}
-Alpha-bearing colours render faithfully in HTML.
-In LaTeX, Typst, DOCX, and PPTX, the opaque colour is shown and a one-time warning is emitted.
-The `currentColor` and `transparent` keywords render only in HTML; other formats skip the preview with a one-time warning.
-:::
-
-## Multiple and Embedded Colours
-
-### ✅ Multiple Colours (Inline)
-
-- ✅ **code**: `["#FF0000", "#00FF00", "#0000FF"]`
-- ✅ **code**: `#FF0000 #00FF00 #0000FF`
-- ✅ **code**: `colors: ["#E74C3C", "#3498DB", "#2ECC71", "#F39C12"]`
-
-### ✅ Embedded Colours (in Code)
-
-- ✅ **code**: `my_scale <- list(scale_colour_manual(values = c("Adelie" = "#0A64C8")))`{.r}
-- ✅ **code**: `color1 = "#FF5733"; color2 = "#33FF57"`{.python}
-- ✅ **code**: `background-color: #282c34;`{.css}
-
-### ✅ Mixed Formats
-
-- ✅ **code**: `["#FF0000", "rgb(0, 255, 0)"]`
+Full documentation: <https://m.canouil.dev/quarto-preview-colour/>.
