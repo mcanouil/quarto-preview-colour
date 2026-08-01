@@ -38,8 +38,7 @@ Enable the filter:
 
 ```yaml
 filters:
-  - path: preview-colour
-    at: post-quarto
+  - preview-colour
 ```
 
 Then write colours as you would anyway:
