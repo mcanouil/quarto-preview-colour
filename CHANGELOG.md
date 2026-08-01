@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+- fix: Honour `code: false` and `text: false`. A bare YAML `false` was read as an absent option, so the feature stayed on at its default, and no spelling of the value worked.
+- fix: Stop the deprecated top-level `preview-colour:` block failing the render. A document configured that way and carrying no `extensions:` key was warned about the deprecation and then died with `attempt to index a nil value (field 'extensions')`.
+
 ### Documentation
 
 - docs: Add a documentation website under `docs/`, built on the `atelier` project type and published to <https://m.canouil.dev/quarto-preview-colour/>.
