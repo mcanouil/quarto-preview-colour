@@ -3,8 +3,7 @@
     "prefix": "meta",
     "body": [
       "filters:",
-      "  - path: preview-colour",
-      "    at: post-quarto",
+      "  - preview-colour",
       "extensions:",
       "  preview-colour:",
       "    code: ${1:true}",
