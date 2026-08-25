@@ -1,5 +1,5 @@
 --- MC Colour - Colour conversion utilities for Quarto Lua filters and shortcodes
---- @module colour
+--- @module "colour"
 --- @license MIT
 --- @copyright 2026 Mickaël Canouil
 --- @author Mickaël Canouil
