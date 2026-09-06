@@ -7,11 +7,26 @@
 local EXTENSION_NAME = "preview-colour"
 
 --- Load required modules
-local str = require(quarto.utils.resolve_path("_modules/string.lua"):gsub("%.lua$", ""))
-local log = require(quarto.utils.resolve_path("_modules/logging.lua"):gsub("%.lua$", ""))
-local meta_mod = require(quarto.utils.resolve_path("_modules/metadata.lua"):gsub("%.lua$", ""))
-local pdoc = require(quarto.utils.resolve_path("_modules/pandoc-helpers.lua"):gsub("%.lua$", ""))
-local colour = require(quarto.utils.resolve_path("_modules/colour.lua"):gsub("%.lua$", ""))
+local str = require(quarto.utils.resolve_path("_vendor/quarto-lua-modules/string.lua"):gsub("%.lua$", ""))
+local log = require(quarto.utils.resolve_path("_vendor/quarto-lua-modules/logging.lua"):gsub("%.lua$", ""))
+local meta_mod = require(quarto.utils.resolve_path("_vendor/quarto-lua-modules/metadata.lua"):gsub("%.lua$", ""))
+local pdoc = require(quarto.utils.resolve_path("_vendor/quarto-lua-modules/pandoc-helpers.lua"):gsub("%.lua$", ""))
+local colour = require(quarto.utils.resolve_path("_vendor/quarto-lua-modules/colour.lua"):gsub("%.lua$", ""))
+local schema = require(quarto.utils.resolve_path("_vendor/quarto-wizard/schema.lua"):gsub("%.lua$", ""))
+local check = require(quarto.utils.resolve_path("_vendor/quarto-lua-modules/schema-check.lua"):gsub("%.lua$", ""))
+
+--- The schema check, built once and reused by every pass of the filter. It reads
+--- `_schema.yml` on the way in and checks the document configuration once.
+---
+--- The validator is injected rather than required by the check module, so the
+--- two vendored sources stay independent of where the other was placed.
+---
+--- The extension contributes a filter and no shortcode, so the check runs from
+--- the `Meta` handler, which is the first pass to see the document.
+---
+--- A schema that cannot be read is reported by the module as an error and the
+--- render carries on: a configuration file must not stop a document.
+local checker = check.new(schema, EXTENSION_NAME)
 
 --- Flag to track if deprecation warning has been shown.
 --- @type boolean
@@ -690,6 +705,8 @@ end
 --- @param meta table<string, any> Document metadata table.
 --- @return table<string, any> Updated metadata table with preview-colour configuration.
 local function get_colour_preview_meta(meta)
+  checker:options(meta)
+
   local preview_colour_text = get_preview_colour_option('text', meta)
   local preview_colour_code = get_preview_colour_option('code', meta)
 
