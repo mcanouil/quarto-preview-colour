@@ -20,9 +20,15 @@ website:
   title: "Preview Colour"
   description: "A Quarto filter that draws a coloured swatch beside every colour code in a document, in HTML, LaTeX, Typst, Word, and PowerPoint."
   # No trailing slash: Quarto builds the social image URL by concatenating this
-  # with a leading-slash image path, without normalising.
+  # with the image path, without normalising.
   site-url: &site-url https://m.canouil.dev/quarto-preview-colour
   repo-url: https://github.com/mcanouil/quarto-preview-colour
+  open-graph:
+    image: assets/social/og-image.png
+    image-alt: "The quarto-preview-colour social card: the extension name and the \"filter\" badge over the line \"Show colour swatches next to colour codes automatically\", beside a dark code window showing document.qmd."
+  twitter-card:
+    image: assets/social/og-image.png
+    image-alt: "The quarto-preview-colour social card: the extension name and the \"filter\" badge over the line \"Show colour swatches next to colour codes automatically\", beside a dark code window showing document.qmd."
   # The pages live under docs/, so the "Edit this page" action needs the
   # subdirectory; without it the link points at a path that does not exist.
   repo-subdir: docs
