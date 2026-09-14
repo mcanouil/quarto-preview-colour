@@ -22,6 +22,7 @@ options:
   glyph:
     type: [string, object]
     description: Glyph character for colour preview marks, or an object with per-format glyphs.
+    additionalProperties: false
     properties:
       html:
         type: string
