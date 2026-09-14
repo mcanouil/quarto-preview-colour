@@ -5,6 +5,7 @@
 ### New Features
 
 - feat: Report a key nested inside an option that the schema does not declare, such as a typo in a nested setting. Only top-level keys were checked before. (#73)
+- feat: Split `json` into a boolean and a `json-file` path. They were one option accepting either, so `json: no` wrote a file called `no` rather than disabling the export. A document passing a path to `json` must be updated. (#73)
 
 ### Documentation
 
