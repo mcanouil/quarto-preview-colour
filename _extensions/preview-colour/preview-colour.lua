@@ -737,17 +737,16 @@ local function get_colour_preview_meta(meta)
   end
 
   -- Optional bulk JSON export of detected colours.
-  -- Mirrors the lua-env JSON feature: `true` writes to `preview-colour.json`,
-  -- a string sets a custom path, anything falsy disables it.
-  local json_value = meta_mod.get_metadata_value(meta, EXTENSION_NAME, 'json')
-  if not str.is_empty(json_value) then
-    if json_value == 'true' then
-      json_export_file = 'preview-colour.json'
-    elseif json_value == 'false' then
-      json_export_file = nil
-    else
-      json_export_file = json_value
-    end
+  --
+  -- Whether to export and where to export are two questions, so they are two
+  -- options. They were one declaration of `type: [boolean, string]` once, which
+  -- made `json: no` write a file called `no`: a string is a declared type, so
+  -- the validator returned it untouched and this code read it as a file name.
+  -- The comment here claimed anything falsy disabled the export, and the branch
+  -- below it did the opposite.
+  if checker:option('json') == true then
+    local path = checker:option('json-file')
+    json_export_file = (type(path) == 'string' and path ~= '') and path or 'preview-colour.json'
   end
 
   -- A document configured only through the deprecated top-level block has no

@@ -22,6 +22,7 @@ options:
   glyph:
     type: [string, object]
     description: Glyph character for colour preview marks, or an object with per-format glyphs.
+    additionalProperties: false
     properties:
       html:
         type: string
@@ -42,6 +43,10 @@ options:
         type: string
         description: Glyph used when no format-specific glyph is set.
   json:
-    type: [boolean, string]
+    type: boolean
     default: false
-    description: Export detected colours to a JSON file, where true writes to preview-colour.json and a string sets a custom path.
+    description: Export detected colours to a JSON file. The file is named by 'json-file'.
+  json-file:
+    type: string
+    default: "preview-colour.json"
+    description: Path of the JSON export, relative to the document. Read only when 'json' is true.
