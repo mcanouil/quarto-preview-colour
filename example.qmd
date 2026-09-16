@@ -70,7 +70,8 @@ extensions:
   preview-colour:
     code: true
     text: true
-    json: example-colours.json
+    json: true
+    json-file: example-colours.json
     glyph:
       default: "●"
       html: "&#9673;"

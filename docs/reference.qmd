@@ -35,7 +35,8 @@ extensions:
 | `code` | boolean | `true` | Scan inline code for colours. |
 | `text` | boolean | `false` | Scan ordinary prose for colours. |
 | `glyph` | string or object | per format | The character drawn as the swatch. |
-| `json` | boolean or string | `false` | Write every colour found to a JSON file. `true` uses `preview-colour.json`. |
+| `json` | boolean | `false` | Write every colour found to a JSON file. |
+| `json-file` | string | `preview-colour.json` | Path of the export, read only when `json` is `true`. |
 
 : Document and project options. {.striped .hover tbl-colwidths="[12,18,14,56]"}
 
@@ -138,7 +139,8 @@ Falling back to the opaque colour, and skipping the two keywords, each warn once
 ```yaml
 extensions:
   preview-colour:
-    json: my-colours.json
+    json: true
+    json-file: my-colours.json
 ```
 
 Writes every colour found, for an audit or a palette extraction:
