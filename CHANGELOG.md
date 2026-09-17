@@ -7,6 +7,10 @@
 - feat: Report a key nested inside an option that the schema does not declare, such as a typo in a nested setting. Only top-level keys were checked before. (#73)
 - feat: Split `json` into a boolean and a `json-file` path. They were one option accepting either, so `json: no` wrote a file called `no` rather than disabling the export. A document passing a path to `json` must be updated. (#73)
 
+### Bug Fixes
+
+- fix: Report that nested key as a warning rather than an error, so the typo does not invalidate the whole configuration. (#73)
+
 ### Documentation
 
 - docs: Serve the extension's social card as the Open Graph image, so a shared link shows the card rather than the first image on the page. (#69)
@@ -15,7 +19,7 @@
 
 - build: Update the vendored Lua modules to 2.3.0, which includes the `schema-check` fix for an extension whose entry points are in a subdirectory. A module no longer carries a version line in its header, so its checksum changes only when its code changes. (#70)
 - build: Fetch the schema validator from a Quarto Wizard release asset rather than a raw path inside its repository, which a refactor could move without notice. The vendored file is unchanged. (#72)
-- build: Update the vendored Lua modules to 2.5.0, which adds the accessors that read what the schema resolves an option, an element's attributes and a format's options to. The schema validator moves to its own release train and is pinned at `schema-v2.1.0`, which accepts only `true` and `false` as a boolean. (#73)
+- build: Update the vendored Lua modules to 2.5.0, which adds the accessors that read what the schema resolves an option, an element's attributes and a format's options to. The schema validator moves to its own release train and is pinned at `schema-v2.2.0`, which accepts only `true` and `false` as a boolean. (#73)
 
 ## 1.7.0 (2026-09-07)
 
