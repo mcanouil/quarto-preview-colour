@@ -42,7 +42,10 @@ extensions:
 
 ::: {.callout-note}
 `text` and `code` are read from the document rather than through the schema, and the extension compares the written value against `false`.
-So `text: false` and `code: false` both take effect, and a spelling the schema rejects, such as `no`, is reported and leaves the scan on.
+So `text: false` and `code: false` both take effect.
+
+Any other spelling reads as true, whatever the schema says about it.
+`code: no` is reported and leaves inline code scanned, and `text: no` is reported and turns prose scanning on, which is the opposite of what it asks for.
 :::
 
 ::: {.callout-warning}
