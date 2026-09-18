@@ -106,7 +106,10 @@ Click it and the colour goes to the clipboard, in the form the document writes i
 Click the swatch beside `rgb(10, 100, 200)` above and the clipboard holds that text, not the hex it resolves to.
 A small `Copied!` label appears for a second and a half, and the tooltip reports the copy for the same time.
 
-The swatch carries an accessible label that names the colour and says a click copies it, so a screen reader announces the value rather than the glyph.
+The swatch carries an accessible label that names the colour and says a click copies it.
+
+The label sits on a plain span with no role and no place in the tab order, so whether a screen reader reads it depends on the reader, and the copy itself cannot be reached from the keyboard at all.
+Treat the swatch as a convenience for a reader using a mouse, and keep the colour value in the text where everyone can read it.
 When the browser refuses the clipboard, the failure is reported to the console and the page is unchanged.
 
 This is an HTML feature only.
