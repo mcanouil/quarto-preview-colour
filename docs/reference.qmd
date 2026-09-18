@@ -44,7 +44,8 @@ extensions:
 `text` and `code` are read from the document rather than through the schema, and the extension compares the written value against `false`.
 So `text: false` and `code: false` both take effect.
 
-Any other spelling reads as true, whatever the schema says about it.
+The comparison ignores case, so `False` and `FALSE` switch the scan off as well.
+Any spelling that is not a case variant of `false` reads as true, whatever the schema says about it.
 `code: no` is reported and leaves inline code scanned, and `text: no` is reported and turns prose scanning on, which is the opposite of what it asks for.
 :::
 

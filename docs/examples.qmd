@@ -146,7 +146,7 @@ With `code: false` a colour in inline code stays plain.
 With `text: false` a colour in prose stays plain.
 Prose is off until you ask for it, so most documents only add `text: true`.
 
-This site turns both on, which is why every example above is marked.
+This site turns both on, which is why every recognised colour above carries a swatch.
 
 ## Exporting the colours
 
