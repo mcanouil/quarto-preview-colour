@@ -14,6 +14,9 @@ extensions:
     text: true
 ```
 
+The [Reference](reference.qmd#colour-formats) lists every form the filter recognises.
+This page shows each of them rendered.
+
 ## Named colours
 
 In code: `red`, `rebeccapurple`, `cornflowerblue`, `darkslategray`.
@@ -21,6 +24,8 @@ In code: `red`, `rebeccapurple`, `cornflowerblue`, `darkslategray`.
 In prose: red, rebeccapurple, cornflowerblue, darkslategray.
 
 Both British and American spellings are recognised, so `grey` and `gray` are marked alike.
+
+A name is matched whatever its case, so `RED` and `Red` are marked too.
 
 ## Hex
 
@@ -50,6 +55,7 @@ In prose: rgba(255, 0, 0, 0.5), hsla(120, 100%, 50%, 0.25).
 
 This page is HTML, so the swatches above carry their alpha.
 In a PDF, a Word file, or a deck the opaque colour is drawn instead, and the filter warns once.
+The [Reference](reference.qmd#format-coverage) records what each format can show.
 
 ## Keywords
 
@@ -60,19 +66,51 @@ In prose: currentColor, transparent.
 `currentColor` takes the colour of the surrounding text, and `transparent` is invisible by definition.
 Neither has an equivalent outside HTML, so both are skipped there.
 
-## What is not recognised
+## Colours inside longer text
 
-A colour in inline code has to be the whole of it.
+A colour does not have to stand alone.
+The filter marks every colour it finds, wherever it sits, and leaves the text around it as it was.
 
-| Written | Marked |
-| --- | --- |
-| `` `#441100` `` | Yes |
-| `` `"My colour is #441100"` `` | No |
-| `` `["#441100", "#114400"]` `` | No |
+In code: `background: #441100;`, `["#441100", "#114400"]`, `color-mix(in srgb, red, blue)`.
 
-: Inline code is matched whole. {.striped .hover tbl-colwidths="[48,52]"}
+In prose: the declaration background:#441100; is marked where it stands.
 
-Neither of the last two is marked above, which is the demonstration.
+The last example holds two colours, and each one gets its own swatch.
+
+## What is not marked
+
+A name that runs into more letters is not a colour, so reddish stays plain.
+
+A fenced code block is not scanned, so nothing in this block is marked:
+
+```css
+.a { color: #b22222; }
+```
+
+Only inline code and prose are read.
+
+`rgb()` and `hsl()` need their commas, so `rgb(255 0 0)` stays plain.
+Only `hwb()` is written with spaces, as above.
+
+A colour function outside the recognised list stays plain as well, so `oklch(0.7 0.1 200)` gets no swatch.
+
+A hex value carrying an alpha pair is read as the six digits it starts with.
+The value `#11223344` is marked for `#112233`, and the final `44` is left over.
+The four-digit form behaves the same way, and `#FFFF` is marked for `#FFF`.
+
+## Copying a colour
+
+In HTML the swatch is more than a picture.
+Click it and the colour goes to the clipboard, in the form the document writes it.
+
+Click the swatch beside `rgb(10, 100, 200)` above and the clipboard holds that text, not the hex it resolves to.
+A small `Copied!` label appears for a second and a half, and the tooltip reports the copy for the same time.
+
+The swatch carries an accessible label that names the colour and says a click copies it, so a screen reader announces the value rather than the glyph.
+When the browser refuses the clipboard, the failure is reported to the console and the page is unchanged.
+
+This is an HTML feature only.
+In LaTeX, Typst, Word, and PowerPoint the swatch is a coloured glyph and nothing more.
 
 ## Choosing the glyph
 
@@ -88,20 +126,63 @@ extensions:
       typst: "◆"
 ```
 
-This site keeps the defaults, so the HTML swatches above are the fisheye `&#9673;`.
+A format named on its own takes what it is given.
+A format with no glyph of its own takes `default`, and with no `default` either it keeps the built-in glyph for that format.
+This site keeps the defaults, so the HTML swatches above are the fisheye ◉.
+The [Reference](reference.qmd#glyphs) lists the default for each format.
 
-## Exporting the colours
+## Turning a scan off
 
-Every colour found can be written out, for an audit or to extract a palette:
+Each scan has its own switch:
 
 ```yaml
 extensions:
   preview-colour:
-    json: my-colours.json
+    code: false
+    text: false
 ```
 
-The file records the original text, the resolved hex, any alpha, and whether the colour came from code or prose.
-This site leaves it off, since it would write a file into the project on every render.
+With `code: false` a colour in inline code stays plain.
+With `text: false` a colour in prose stays plain.
+Prose is off until you ask for it, so most documents only add `text: true`.
+
+This site turns both on, which is why every example above is marked.
+
+## Exporting the colours
+
+Every colour found can be written to a file, for an audit or to extract a palette.
+Two options do it: `json` turns the export on, and `json-file` names the file.
+
+```yaml
+extensions:
+  preview-colour:
+    json: true
+    json-file: my-colours.json
+```
+
+`json` is a switch, not a path.
+A path written there is refused, and the render carries on with no export:
+
+```text
+(E) [preview-colour] json: must be of type "boolean", got "string".
+```
+
+The file is written next to the document being rendered, not next to the project.
+A document at `sub/page.qmd` with the default `json-file` writes `sub/preview-colour.json`, and the filter says so:
+
+```text
+[preview-colour] Exported 4 colour(s) to: preview-colour.json
+```
+
+The directory is never created.
+When it does not exist the filter reports the failure and the document is rendered as usual:
+
+```text
+(E) [preview-colour] Failed to write JSON export to "exports/my-colours.json": exports/my-colours.json: No such file or directory
+```
+
+The [Reference](reference.qmd#json-export) records what the file holds.
+This site leaves the export off, so no render writes a file into the project.
 
 ## Source
 
