@@ -60,9 +60,9 @@ extensions:
 
 This site enables both, so rebeccapurple in ordinary prose is marked too.
 
-::: {.callout-important}
-A colour code in inline code has to stand alone.
-`` `#441100` `` is recognised; `` `"My colour is #441100"` `` and `` `["#441100", "#114400"]` `` are not.
+::: {.callout-note}
+A colour is recognised wherever it sits inside inline code.
+`` `#441100` `` is marked, and so is each colour in `` `["#441100", "#114400"]` ``.
 :::
 
 See the [Reference](reference.qmd) for every format and option, and the [Examples](examples.qmd) for each of them rendered.

@@ -93,6 +93,6 @@ Named colours, short hex, `hsl()`, `hwb()`, and the alpha forms are all recognis
 
 Scanning of prose is off by default; turn it on with `text: true` under `extensions.preview-colour`.
 
-A colour in inline code has to be the whole of it, so `` `"My colour is #441100"` `` is not marked.
+A colour is marked wherever it sits inside inline code, so `` `"My colour is #441100"` `` is marked too.
 
 Full documentation: <https://m.canouil.dev/quarto-preview-colour/>.
