@@ -14,7 +14,7 @@
 ### Documentation
 
 - docs: Serve the extension's social card as the Open Graph image, so a shared link shows the card rather than the first image on the page. (#69)
-- docs: Add worked examples for the JSON export, for the clipboard swatch, for turning each scan off, and for a colour written inside longer text. The examples page said such a colour was not marked, which it is.
+- docs: Add worked examples for the JSON export, for the clipboard swatch, for turning each scan off, and for a colour written inside longer text. The examples page said such a colour was not marked, which it is. (#74)
 
 ### Refactoring
 
