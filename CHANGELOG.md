@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.0.0 (2026-09-23)
+
 ### New Features
 
 - feat: Report a key nested inside an option that the schema does not declare, such as a typo in a nested setting. Only top-level keys were checked before. (#73)
