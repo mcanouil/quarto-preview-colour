@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### New Features
+
+- feat: Style the HTML colour mark and its "Copied!" tooltip from a stylesheet that reads the page theme.
+  The tooltip now matches the site, and follows the colour scheme the page shows. (#78)
+
 ## 2.0.0 (2026-09-23)
 
 ### New Features
