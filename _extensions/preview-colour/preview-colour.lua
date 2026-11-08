@@ -265,7 +265,7 @@ local function create_html_colour_mark(css, label, glyph)
   local name = str.escape_html('Copy colour ' .. label)
   return '<button type="button" class="preview-colour" data-colour="' .. str.escape_html(label) ..
       '" aria-label="' .. name .. '" title="' .. name ..
-      '"><span class="preview-colour-glyph" style="color: ' .. str.escape_html(css) ..
+      '"><span style="color: ' .. str.escape_html(css) ..
       ';" aria-hidden="true">' .. glyph .. '</span></button>'
 end
 
@@ -480,20 +480,6 @@ local function get_all_colours(element)
   return matches
 end
 
---- Escape HTML special characters in text.
---- @param text string Text to escape.
---- @return string Escaped text safe for HTML.
-local function escape_html(text)
-  local replacements = {
-    ['&'] = '&amp;',
-    ['<'] = '&lt;',
-    ['>'] = '&gt;',
-    ['"'] = '&quot;',
-    ["'"] = '&#39;'
-  }
-  return (text:gsub('[&<>"\']', replacements))
-end
-
 --- Reconstruct a Code element with colour marks inserted after each colour.
 --- Keeps the code as a single visual unit with marks embedded inside.
 --- @param element table Pandoc Code element.
@@ -517,7 +503,7 @@ local function reconstruct_code_with_marks(element, matches, format, language, g
     if match.start_pos > last_pos then
       local prefix = string.sub(text, last_pos, match.start_pos - 1)
       if format == "html" then
-        prefix = escape_html(prefix)
+        prefix = str.escape_html(prefix)
       elseif format == "latex" then
         prefix = str.escape_text(prefix, format)
       elseif format == "typst" then
@@ -529,7 +515,7 @@ local function reconstruct_code_with_marks(element, matches, format, language, g
     -- Add the colour code.
     local colour_text = match.original
     if format == "html" then
-      colour_text = escape_html(colour_text)
+      colour_text = str.escape_html(colour_text)
     elseif format == "latex" then
       colour_text = str.escape_text(colour_text, format)
     elseif format == "typst" then
@@ -550,7 +536,7 @@ local function reconstruct_code_with_marks(element, matches, format, language, g
   if last_pos <= #text then
     local suffix = string.sub(text, last_pos)
     if format == "html" then
-      suffix = escape_html(suffix)
+      suffix = str.escape_html(suffix)
     elseif format == "latex" then
       suffix = str.escape_text(suffix, format)
     elseif format == "typst" then

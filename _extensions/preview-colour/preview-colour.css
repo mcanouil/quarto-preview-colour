@@ -3,9 +3,9 @@
  *
  * @author Mickaël Canouil
  *
- * The mark is a button, so its own chrome is reset to keep it looking like a
- * glyph in the text, with or without Bootstrap. The glyph keeps its colour
- * inline, because the colour is the data it shows. The button itself takes the
+ * The mark is a button, so `all: unset` removes its own chrome and keeps it
+ * looking like a glyph in the text, with or without Bootstrap. The glyph keeps
+ * its colour inline, because the colour is the data it shows. The button takes the
  * colour of the text around it, so the focus ring in `currentColor` has the
  * contrast of the text rather than of the colour shown.
  * The tooltip takes its colours, radius, font, and shadow from the page theme:
@@ -16,32 +16,13 @@
  */
 
 .preview-colour {
+  all: unset;
   position: relative;
-  display: inline;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  box-shadow: none;
-  color: inherit;
-  font: inherit;
   font-size: 0.8lh;
   font-family: system-ui, sans-serif;
-  line-height: inherit;
-  letter-spacing: inherit;
-  text-transform: none;
-  vertical-align: baseline;
   cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
   -webkit-user-select: none;
   user-select: none;
-}
-
-.preview-colour:focus {
-  outline: none;
-  box-shadow: none;
 }
 
 .preview-colour:focus-visible {
@@ -55,11 +36,9 @@
   width: 1px;
   height: 1px;
   margin: -1px;
-  padding: 0;
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
-  border: 0;
 }
 
 .preview-colour-tooltip {
