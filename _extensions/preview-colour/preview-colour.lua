@@ -237,39 +237,36 @@ local function get_glyph_for_format(format)
 end
 
 
---- Whether the stylesheet for the HTML mark is already attached to the page.
+--- Whether the stylesheet and script for the HTML mark are already attached to the page.
 local html_dependency_added = false
 
---- Attach the stylesheet for the HTML mark and its tooltip, once per document.
+--- Attach the stylesheet and the copy script for the HTML mark, once per document.
 local function ensure_html_dependency()
   if html_dependency_added then return end
   quarto.doc.add_html_dependency({
     name = EXTENSION_NAME,
-    version = '1.0.0',
+    version = '1.1.0',
     stylesheets = { 'preview-colour.css' },
+    scripts = { 'preview-colour.js' },
   })
   html_dependency_added = true
 end
 
 --- Create colour preview mark for HTML format.
 --- Accepts either an opaque hex colour or a CSS colour string (for keywords/alpha).
+--- The mark is a button, so it is reachable and operable from the keyboard.
+--- The copy itself is done by `preview-colour.js`, which reads `data-colour`.
 --- @param css string CSS colour value to apply (e.g. `#FF0000`, `rgba(...)`, `currentColor`, `transparent`).
---- @param label string Human-readable label for the title/aria attributes and copy buffer.
+--- @param label string Human-readable label for the accessible name and copy buffer.
 --- @param glyph string Glyph character to use for the preview.
 --- @return string HTML colour preview mark.
 local function create_html_colour_mark(css, label, glyph)
   ensure_html_dependency()
-  return '<span class="preview-colour" style="color: ' ..
-      css ..
-      ';" title="Colour preview: ' ..
-      label ..
-      ' (click to copy)" aria-label="Colour preview: ' ..
-      label ..
-      ' (click to copy)" onclick="navigator.clipboard.writeText(\'' ..
-      label ..
-      '\').then(() => { const span = this; const originalTitle = span.title; span.title = \'Copied: ' ..
-      label ..
-      '\'; let tooltip = document.createElement(\'div\'); tooltip.className = \'preview-colour-tooltip\'; tooltip.textContent = \'Copied!\'; span.appendChild(tooltip); setTimeout(() => { span.title = originalTitle; if (span.contains(tooltip)) span.removeChild(tooltip); }, 1500); }).catch(() => console.error(\'Failed to copy colour code\'));">' .. glyph .. '</span>'
+  local name = str.escape_html('Copy colour ' .. label)
+  return '<button type="button" class="preview-colour" data-colour="' .. str.escape_html(label) ..
+      '" aria-label="' .. name .. '" title="' .. name ..
+      '"><span style="color: ' .. str.escape_html(css) ..
+      ';" aria-hidden="true">' .. glyph .. '</span></button>'
 end
 
 --- Create colour preview mark for LaTeX format.
@@ -483,20 +480,6 @@ local function get_all_colours(element)
   return matches
 end
 
---- Escape HTML special characters in text.
---- @param text string Text to escape.
---- @return string Escaped text safe for HTML.
-local function escape_html(text)
-  local replacements = {
-    ['&'] = '&amp;',
-    ['<'] = '&lt;',
-    ['>'] = '&gt;',
-    ['"'] = '&quot;',
-    ["'"] = '&#39;'
-  }
-  return (text:gsub('[&<>"\']', replacements))
-end
-
 --- Reconstruct a Code element with colour marks inserted after each colour.
 --- Keeps the code as a single visual unit with marks embedded inside.
 --- @param element table Pandoc Code element.
@@ -520,7 +503,7 @@ local function reconstruct_code_with_marks(element, matches, format, language, g
     if match.start_pos > last_pos then
       local prefix = string.sub(text, last_pos, match.start_pos - 1)
       if format == "html" then
-        prefix = escape_html(prefix)
+        prefix = str.escape_html(prefix)
       elseif format == "latex" then
         prefix = str.escape_text(prefix, format)
       elseif format == "typst" then
@@ -532,7 +515,7 @@ local function reconstruct_code_with_marks(element, matches, format, language, g
     -- Add the colour code.
     local colour_text = match.original
     if format == "html" then
-      colour_text = escape_html(colour_text)
+      colour_text = str.escape_html(colour_text)
     elseif format == "latex" then
       colour_text = str.escape_text(colour_text, format)
     elseif format == "typst" then
@@ -553,7 +536,7 @@ local function reconstruct_code_with_marks(element, matches, format, language, g
   if last_pos <= #text then
     local suffix = string.sub(text, last_pos)
     if format == "html" then
-      suffix = escape_html(suffix)
+      suffix = str.escape_html(suffix)
     elseif format == "latex" then
       suffix = str.escape_text(suffix, format)
     elseif format == "typst" then

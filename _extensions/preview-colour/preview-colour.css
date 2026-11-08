@@ -3,7 +3,11 @@
  *
  * @author Mickaël Canouil
  *
- * The mark keeps its colour inline, because the colour is the data it shows.
+ * The mark is a button, so `all: unset` removes its own chrome and keeps it
+ * looking like a glyph in the text, with or without Bootstrap. The glyph keeps
+ * its colour inline, because the colour is the data it shows. The button takes the
+ * colour of the text around it, so the focus ring in `currentColor` has the
+ * contrast of the text rather than of the colour shown.
  * The tooltip takes its colours, radius, font, and shadow from the page theme:
  * the Bootstrap 5 custom properties on an HTML page, the Reveal.js theme
  * properties on a slide deck, and the system colours elsewhere. It is the
@@ -12,12 +16,29 @@
  */
 
 .preview-colour {
+  all: unset;
   position: relative;
   font-size: 0.8lh;
   font-family: system-ui, sans-serif;
   cursor: pointer;
   -webkit-user-select: none;
   user-select: none;
+}
+
+.preview-colour:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 0.125rem;
+}
+
+.preview-colour-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .preview-colour-tooltip {
