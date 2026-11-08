@@ -68,8 +68,22 @@
     createLiveRegion();
     document.addEventListener('click', (event) => {
       const mark = event.target.closest('button.preview-colour');
-      if (mark) copy(mark);
+      if (!mark) return;
+      // A mark can sit inside a link, and a copy must not also follow it.
+      event.preventDefault();
+      copy(mark);
     });
+    // Reveal.js reads Space and Enter on the document to change slides. The
+    // capture listener keeps them on the mark, so they press the button.
+    document.addEventListener(
+      'keydown',
+      (event) => {
+        if ((event.key === ' ' || event.key === 'Enter') && event.target.closest?.('button.preview-colour')) {
+          event.stopPropagation();
+        }
+      },
+      true,
+    );
   };
 
   if (document.readyState === 'loading') {
