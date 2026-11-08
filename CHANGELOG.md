@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.1.0 (2026-11-08)
+
 ### New Features
 
 - feat: Style the HTML colour mark and its "Copied!" tooltip from a stylesheet that reads the page theme.
