@@ -7,6 +7,11 @@
 - feat: Style the HTML colour mark and its "Copied!" tooltip from a stylesheet that reads the page theme.
   The tooltip now matches the site, and follows the colour scheme the page shows. (#78)
 
+### Bug Fixes
+
+- fix: Make the HTML colour mark a button, so you can reach it with Tab and copy with Enter or Space.
+  Screen readers now hear its name and whether the copy worked. (#79)
+
 ## 2.0.0 (2026-09-23)
 
 ### New Features

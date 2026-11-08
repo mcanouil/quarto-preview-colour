@@ -100,17 +100,22 @@ The four-digit form behaves the same way, and `#FFFF` is marked for `#FFF`.
 
 ## Copying a colour
 
-In HTML the swatch is more than a picture.
-Click it and the colour goes to the clipboard, in the form the document writes it.
+In HTML the swatch is a button.
+Click it, and the colour goes to the clipboard in the form that the document writes it.
+The keyboard works too: move to the swatch with the Tab key, then push Enter or Space.
 
 Click the swatch beside `rgb(10, 100, 200)` above and the clipboard holds that text, not the hex it resolves to.
-A small `Copied!` label appears for a second and a half, and the tooltip reports the copy for the same time.
+A small `Copied!` label appears for a second and a half.
 
-The swatch carries an accessible label that names the colour and says a click copies it.
+The button has an accessible name that names the colour, for example "Copy colour #cc3366".
+The glyph is hidden from screen readers, so they read only this name.
+After each copy, the page writes the result to a polite live region, so a screen reader announces "Copied" and the colour.
+The live region clears after three seconds.
+When the browser refuses the clipboard, the label shows `Copy failed`, the live region announces the failure, and the console gets the error.
 
-The label sits on a plain span with no role and no place in the tab order, so whether a screen reader reads it depends on the reader, and the copy itself cannot be reached from the keyboard at all.
-Treat the swatch as a convenience for a reader using a mouse, and keep the colour value in the text where everyone can read it.
-When the browser refuses the clipboard, the failure is reported to the console and the page is unchanged.
+Each swatch is one more stop in the tab order.
+When the swatch has keyboard focus, a ring in the colour of the text around it shows where the focus is.
+The swatch is excluded from a text selection, so a copy of the code around it does not include the glyph.
 
 This is an HTML feature only.
 In LaTeX, Typst, Word, and PowerPoint the swatch is a coloured glyph and nothing more.
