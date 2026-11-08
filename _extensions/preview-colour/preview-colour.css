@@ -1,0 +1,38 @@
+/**
+ * Preview Colour Extension - HTML mark and copy tooltip
+ *
+ * @author Mickaël Canouil
+ *
+ * The mark keeps its colour inline, because the colour is the data it shows.
+ * The tooltip takes its colours, radius, font, and shadow from the page theme:
+ * the Bootstrap 5 custom properties on an HTML page, the Reveal.js theme
+ * properties on a slide deck, and the system colours elsewhere. It is the
+ * inverse of the page, as a Bootstrap tooltip is, so it follows the colour
+ * scheme that the page shows.
+ */
+
+.preview-colour {
+  position: relative;
+  font-size: 0.8lh;
+  font-family: system-ui, sans-serif;
+  cursor: pointer;
+  user-select: none;
+}
+
+.preview-colour-tooltip {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1080;
+  padding: 0.25rem 0.5rem;
+  background: var(--bs-body-color, var(--r-main-color, CanvasText));
+  color: var(--bs-body-bg, var(--r-background-color, Canvas));
+  border-radius: var(--bs-border-radius, 0.375rem);
+  box-shadow: var(--bs-box-shadow-sm, 0 0.125rem 0.25rem rgb(0 0 0 / 7.5%));
+  font-family: var(--bs-body-font-family, var(--r-main-font, system-ui, sans-serif));
+  font-size: 0.75rem;
+  line-height: 1.5;
+  white-space: nowrap;
+  pointer-events: none;
+}

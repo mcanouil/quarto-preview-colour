@@ -237,6 +237,20 @@ local function get_glyph_for_format(format)
 end
 
 
+--- Whether the stylesheet for the HTML mark is already attached to the page.
+local html_dependency_added = false
+
+--- Attach the stylesheet for the HTML mark and its tooltip, once per document.
+local function ensure_html_dependency()
+  if html_dependency_added then return end
+  quarto.doc.add_html_dependency({
+    name = EXTENSION_NAME,
+    version = '1.0.0',
+    stylesheets = { 'preview-colour.css' },
+  })
+  html_dependency_added = true
+end
+
 --- Create colour preview mark for HTML format.
 --- Accepts either an opaque hex colour or a CSS colour string (for keywords/alpha).
 --- @param css string CSS colour value to apply (e.g. `#FF0000`, `rgba(...)`, `currentColor`, `transparent`).
@@ -244,9 +258,10 @@ end
 --- @param glyph string Glyph character to use for the preview.
 --- @return string HTML colour preview mark.
 local function create_html_colour_mark(css, label, glyph)
-  return '<span style="font-size: 0.8lh; font-family: system-ui, sans-serif; color: ' ..
+  ensure_html_dependency()
+  return '<span class="preview-colour" style="color: ' ..
       css ..
-      '; cursor: pointer; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; position: relative;" title="Colour preview: ' ..
+      ';" title="Colour preview: ' ..
       label ..
       ' (click to copy)" aria-label="Colour preview: ' ..
       label ..
@@ -254,7 +269,7 @@ local function create_html_colour_mark(css, label, glyph)
       label ..
       '\').then(() => { const span = this; const originalTitle = span.title; span.title = \'Copied: ' ..
       label ..
-      '\'; let tooltip = document.createElement(\'div\'); tooltip.textContent = \'Copied!\'; tooltip.style.cssText = \'position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:4px 8px;border-radius:4px;font-size:12px;font-family:sans-serif;white-space:nowrap;z-index:9999;box-shadow:0 2px 4px rgba(0,0,0,0.3);pointer-events:none;\'; span.appendChild(tooltip); setTimeout(() => { span.title = originalTitle; if (span.contains(tooltip)) span.removeChild(tooltip); }, 1500); }).catch(() => console.error(\'Failed to copy colour code\'));">' .. glyph .. '</span>'
+      '\'; let tooltip = document.createElement(\'div\'); tooltip.className = \'preview-colour-tooltip\'; tooltip.textContent = \'Copied!\'; span.appendChild(tooltip); setTimeout(() => { span.title = originalTitle; if (span.contains(tooltip)) span.removeChild(tooltip); }, 1500); }).catch(() => console.error(\'Failed to copy colour code\'));">' .. glyph .. '</span>'
 end
 
 --- Create colour preview mark for LaTeX format.
