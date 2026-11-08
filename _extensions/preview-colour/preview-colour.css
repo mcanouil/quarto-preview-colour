@@ -16,6 +16,7 @@
   font-size: 0.8lh;
   font-family: system-ui, sans-serif;
   cursor: pointer;
+  -webkit-user-select: none;
   user-select: none;
 }
 
