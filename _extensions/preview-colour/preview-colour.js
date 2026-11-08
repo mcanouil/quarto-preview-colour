@@ -67,7 +67,7 @@
   const init = () => {
     createLiveRegion();
     document.addEventListener('click', (event) => {
-      const mark = event.target.closest('button.preview-colour');
+      const mark = event.target.closest?.('button.preview-colour');
       if (!mark) return;
       // A mark can sit inside a link, and a copy must not also follow it.
       event.preventDefault();
