@@ -97,16 +97,17 @@ def luminance(colour: str) -> float:
     """Compute the WCAG relative luminance of a computed CSS colour.
 
     Args:
-        colour: Colour as `getComputedStyle` gives it, `rgb()` or `rgba()`.
+        colour: Opaque colour as `getComputedStyle` gives it, `rgb()`.
 
     Returns:
         The relative luminance, from 0 to 1.
     """
-    match = re.fullmatch(r"rgba?\((\d+), (\d+), (\d+)(?:, [\d.]+)?\)", colour)
+    match = re.fullmatch(r"rgb\((\d+), (\d+), (\d+)\)", colour)
     if match is None:
         raise ValueError(
-            f"Cannot read the colour {colour!r}: expected rgb() or rgba() "
-            "with integer channels, as getComputedStyle gives them."
+            f"Cannot read the colour {colour!r}: expected an opaque rgb() "
+            "with integer channels. A transparent colour has no contrast "
+            "of its own, so the check cannot score it."
         )
     channels = [int(value) / 255 for value in match.groups()]
     linear = [
@@ -152,6 +153,7 @@ def check_scenario(page: Page, url: str, body_class: str) -> list[str]:
           const button = getComputedStyle(mark);
           return {
             body: document.body.classList.contains(bodyClass),
+            shown: 'tooltip' in mark.dataset,
             focused: mark.matches(':focus-visible'),
             text: tooltip.color,
             background: tooltip.backgroundColor,
@@ -167,12 +169,16 @@ def check_scenario(page: Page, url: str, body_class: str) -> list[str]:
         failures.append(f"the body does not have the class {body_class}")
     if not colours["focused"]:
         failures.append("the mark does not match :focus-visible")
-    ratio = contrast(colours["text"], colours["background"])
-    print(
-        f"  tooltip: {colours['text']} on {colours['background']}, contrast {ratio:.2f}"
-    )
-    if ratio < MIN_CONTRAST:
-        failures.append(f"tooltip contrast {ratio:.2f} is below {MIN_CONTRAST}")
+    if not colours["shown"]:
+        failures.append("the tooltip expired before its colours were read")
+    else:
+        ratio = contrast(colours["text"], colours["background"])
+        print(
+            f"  tooltip: {colours['text']} on {colours['background']}, "
+            f"contrast {ratio:.2f}"
+        )
+        if ratio < MIN_CONTRAST:
+            failures.append(f"tooltip contrast {ratio:.2f} is below {MIN_CONTRAST}")
     if colours["glyph"] != GLYPH_COLOUR:
         failures.append(f"glyph colour {colours['glyph']} is not {GLYPH_COLOUR}")
     if colours["ring"] != colours["code"]:
