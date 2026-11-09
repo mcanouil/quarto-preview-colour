@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.1.1 (2026-11-09)
+
 ### Bug Fixes
 
 - fix: Keep the "Copied!" tooltip readable when the mark sits in inline code.
