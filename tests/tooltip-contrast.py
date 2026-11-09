@@ -6,10 +6,11 @@
 
 A theme can colour every `code span` under a colour-scheme scope, such as
 `body.quarto-light code span`, and the mark sits inside the code element. The
-fixture page adds such rules to a light and a dark theme. The check clicks the
-mark, and asserts that the tooltip text has a contrast of at least 4.5 with its
-background in each colour scheme. It also asserts that the glyph keeps its own
-colour and that the focus ring takes the colour of the code text.
+fixture page adds such rules to a light and a dark theme. The check presses
+the mark from the keyboard, and asserts that the tooltip text has a contrast of
+at least 4.5 with its background in each colour scheme. It also asserts that
+the glyph keeps its own colour and that the focus ring is drawn in the colour of
+the code text.
 
 Run from the repository root:
 
@@ -29,7 +30,7 @@ import tempfile
 import threading
 from pathlib import Path
 
-from playwright.sync_api import Page, sync_playwright
+from playwright.sync_api import Page, expect, sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
 MIN_CONTRAST = 4.5
@@ -56,9 +57,9 @@ A mark inside inline code: `#cc3366`.
 """
 
 SCENARIOS = [
-    ("light", "light", None),
-    ("dark", "light", "alternate"),
-    ("OS dark, page forced light", "dark", "default"),
+    ("light", "light", None, "quarto-light"),
+    ("dark", "light", "alternate", "quarto-dark"),
+    ("OS dark, page forced light", "dark", "default", "quarto-light"),
 ]
 
 
@@ -67,6 +68,16 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
 
     def log_message(self, format: str, *args: object) -> None:
         """Discard the request log."""
+
+
+class FixtureServer(http.server.ThreadingHTTPServer):
+    """Serve the fixture with a listen queue long enough for a browser.
+
+    The default queue holds five connections. Chromium opens more at once, and
+    the refused ones drop stylesheets from the page at random.
+    """
+
+    request_queue_size = 128
 
 
 def render_fixture(directory: Path) -> None:
@@ -91,7 +102,13 @@ def luminance(colour: str) -> float:
     Returns:
         The relative luminance, from 0 to 1.
     """
-    channels = [int(value) / 255 for value in re.findall(r"\d+", colour)[:3]]
+    match = re.fullmatch(r"rgba?\((\d+), (\d+), (\d+)(?:, [\d.]+)?\)", colour)
+    if match is None:
+        raise ValueError(
+            f"Cannot read the colour {colour!r}: expected rgb() or rgba() "
+            "with integer channels, as getComputedStyle gives them."
+        )
+    channels = [int(value) / 255 for value in match.groups()]
     linear = [
         c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in channels
     ]
@@ -114,39 +131,43 @@ def contrast(foreground: str, background: str) -> float:
     return (lighter + 0.05) / (darker + 0.05)
 
 
-def check_scenario(page: Page, url: str) -> list[str]:
-    """Load the page, click the mark, and check its colours.
+def check_scenario(page: Page, url: str, body_class: str) -> list[str]:
+    """Load the page, press the mark, and check its colours.
 
     Args:
         page: Browser page, already set to the colour scheme of the scenario.
         url: Address of the rendered fixture.
+        body_class: Class that Quarto puts on the body for the expected scheme.
 
     Returns:
         One message for each failed check; empty when all checks pass.
     """
     page.goto(url, wait_until="networkidle")
     mark = page.locator("code button.preview-colour")
-    mark.click()
+    mark.press("Enter")
+    expect(mark).to_have_attribute("data-tooltip", re.compile(r".+"), timeout=1000)
     colours = mark.evaluate(
-        """(mark) => {
+        """(mark, bodyClass) => {
           const tooltip = getComputedStyle(mark, '::after');
           const button = getComputedStyle(mark);
           return {
-            body: document.body.className,
-            content: tooltip.content,
+            body: document.body.classList.contains(bodyClass),
+            focused: mark.matches(':focus-visible'),
             text: tooltip.color,
             background: tooltip.backgroundColor,
             glyph: getComputedStyle(mark.querySelector('span[style]')).color,
-            ring: button.outlineColor,
+            ring: button.outlineStyle === 'none' ? 'none' : button.outlineColor,
             code: getComputedStyle(mark.parentElement).color,
           };
-        }"""
+        }""",
+        body_class,
     )
     failures = []
-    if colours["content"] == "none":
-        failures.append("no tooltip after the click")
+    if not colours["body"]:
+        failures.append(f"the body does not have the class {body_class}")
+    if not colours["focused"]:
+        failures.append("the mark does not match :focus-visible")
     ratio = contrast(colours["text"], colours["background"])
-    print(f"  body: {colours['body']}")
     print(
         f"  tooltip: {colours['text']} on {colours['background']}, contrast {ratio:.2f}"
     )
@@ -172,7 +193,7 @@ def main() -> int:
         directory = Path(temporary)
         render_fixture(directory)
         handler = functools.partial(QuietHandler, directory=str(directory))
-        server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        server = FixtureServer(("127.0.0.1", 0), handler)
         threading.Thread(target=server.serve_forever, daemon=True).start()
         url = f"http://127.0.0.1:{server.server_port}/index.html"
         try:
@@ -180,7 +201,7 @@ def main() -> int:
                 browser = playwright.chromium.launch(
                     executable_path=os.environ.get("CHROME_PATH")
                 )
-                for name, os_scheme, page_scheme in SCENARIOS:
+                for name, os_scheme, page_scheme, body_class in SCENARIOS:
                     print(f"{name}:")
                     context = browser.new_context(color_scheme=os_scheme)
                     context.grant_permissions(["clipboard-read", "clipboard-write"])
@@ -189,7 +210,9 @@ def main() -> int:
                             f"localStorage.setItem('quarto-color-scheme', '{page_scheme}')"
                         )
                     page = context.new_page()
-                    failures.extend(f"{name}: {f}" for f in check_scenario(page, url))
+                    failures.extend(
+                        f"{name}: {f}" for f in check_scenario(page, url, body_class)
+                    )
                     context.close()
                 browser.close()
         finally:

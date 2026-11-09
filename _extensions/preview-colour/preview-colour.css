@@ -45,10 +45,12 @@
  * The tooltip is drawn after the mark, from its `data-tooltip` attribute. The
  * mark is often inside inline code, and a theme rule on `code span` cannot
  * match a pseudo-element. `all: initial` stops the tooltip from inheriting the
- * font and text styles of the code.
+ * font and text styles of the code. It keeps the colour scheme of the page, so
+ * the system colours resolve as the page shows them.
  */
 .preview-colour[data-tooltip]::after {
   all: initial;
+  color-scheme: inherit;
   content: attr(data-tooltip);
   position: absolute;
   bottom: calc(100% + 0.5rem);
