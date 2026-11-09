@@ -41,7 +41,13 @@
   white-space: nowrap;
 }
 
-.preview-colour-tooltip {
+/*
+ * The tooltip is a span inside the mark, and the mark is often inside inline
+ * code. A theme can style every `code span` under a colour-scheme scope, such
+ * as `body.quarto-light code span`, which outranks one class. The repeated
+ * class gives the tooltip three classes, so its own colours and font win.
+ */
+.preview-colour > .preview-colour-tooltip.preview-colour-tooltip {
   position: absolute;
   bottom: calc(100% + 0.5rem);
   left: 50%;
@@ -54,6 +60,8 @@
   box-shadow: var(--bs-box-shadow-sm, 0 0.125rem 0.25rem rgb(0 0 0 / 7.5%));
   font-family: var(--bs-body-font-family, var(--r-main-font, system-ui, sans-serif));
   font-size: 0.75rem;
+  font-style: normal;
+  font-weight: normal;
   line-height: 1.5;
   white-space: nowrap;
   pointer-events: none;
