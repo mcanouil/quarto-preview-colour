@@ -30,7 +30,7 @@ import tempfile
 import threading
 from pathlib import Path
 
-from playwright.sync_api import Page, expect, sync_playwright
+from playwright.sync_api import Page, sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
 MIN_CONTRAST = 4.5
@@ -146,9 +146,14 @@ def check_scenario(page: Page, url: str, body_class: str) -> list[str]:
     page.goto(url, wait_until="networkidle")
     mark = page.locator("code button.preview-colour")
     mark.press("Enter")
-    expect(mark).to_have_attribute("data-tooltip", re.compile(r".+"), timeout=1000)
+    # The page waits for the tooltip and reads it in one step, well inside the
+    # time that the tooltip stays.
     colours = mark.evaluate(
-        """(mark, bodyClass) => {
+        """async (mark, bodyClass) => {
+          const start = performance.now();
+          while (!('tooltip' in mark.dataset) && performance.now() - start < 1000) {
+            await new Promise(requestAnimationFrame);
+          }
           const tooltip = getComputedStyle(mark, '::after');
           const button = getComputedStyle(mark);
           return {
@@ -170,7 +175,7 @@ def check_scenario(page: Page, url: str, body_class: str) -> list[str]:
     if not colours["focused"]:
         failures.append("the mark does not match :focus-visible")
     if not colours["shown"]:
-        failures.append("the tooltip expired before its colours were read")
+        failures.append("no tooltip within 1 s of the key press")
     else:
         ratio = contrast(colours["text"], colours["background"])
         print(
@@ -205,7 +210,7 @@ def main() -> int:
         try:
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch(
-                    executable_path=os.environ.get("CHROME_PATH")
+                    executable_path=os.environ.get("CHROME_PATH") or None
                 )
                 for name, os_scheme, page_scheme, body_class in SCENARIOS:
                     print(f"{name}:")
