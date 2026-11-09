@@ -37,14 +37,17 @@
     }, STATUS_DELAY);
   };
 
+  const tooltipTimers = new WeakMap();
+
+  // The stylesheet draws the tooltip from `data-tooltip`, so it is not an
+  // element inside the code, where a theme rule such as `code span` reaches it.
   const showTooltip = (mark, message) => {
-    mark.querySelector('.preview-colour-tooltip')?.remove();
-    const tooltip = document.createElement('span');
-    tooltip.className = 'preview-colour-tooltip';
-    tooltip.setAttribute('aria-hidden', 'true');
-    tooltip.textContent = message;
-    mark.appendChild(tooltip);
-    setTimeout(() => tooltip.remove(), TOOLTIP_DURATION);
+    clearTimeout(tooltipTimers.get(mark));
+    mark.dataset.tooltip = message;
+    tooltipTimers.set(
+      mark,
+      setTimeout(() => delete mark.dataset.tooltip, TOOLTIP_DURATION),
+    );
   };
 
   const report = (mark, value, copied) => {

@@ -12,3 +12,4 @@
 /preview-colour.json
 /.quarto/
 **/*.quarto_ipynb
+__pycache__/

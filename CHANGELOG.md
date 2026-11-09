@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+- fix: Keep the "Copied!" tooltip readable when the mark sits in inline code.
+  A theme that colours every `code span` no longer paints the tooltip text in the code colour. (#81)
+
 ## 2.1.0 (2026-11-08)
 
 ### New Features
