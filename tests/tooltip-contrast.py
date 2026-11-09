@@ -5,12 +5,11 @@
 """Check the contrast of the copy tooltip for a mark inside inline code.
 
 A theme can colour every `code span` under a colour-scheme scope, such as
-`body.quarto-light code span`, and the tooltip is a span inside the code
-element. The fixture page adds such rules to a light and a dark theme. The
-check clicks the mark, and asserts that the tooltip text has
-a contrast of at least 4.5 with its background in each colour scheme. It also
-asserts that the glyph keeps its own colour and that the focus ring takes the
-colour of the code text.
+`body.quarto-light code span`, and the mark sits inside the code element. The
+fixture page adds such rules to a light and a dark theme. The check clicks the
+mark, and asserts that the tooltip text has a contrast of at least 4.5 with its
+background in each colour scheme. It also asserts that the glyph keeps its own
+colour and that the focus ring takes the colour of the code text.
 
 Run from the repository root:
 
@@ -70,20 +69,17 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
         """Discard the request log."""
 
 
-def render_fixture(directory: Path) -> Path:
-    """Render the fixture page with the extension from this repository.
+def render_fixture(directory: Path) -> None:
+    """Render the fixture page to `index.html` with the extension from this repository.
 
     Args:
         directory: Empty directory that receives the extension and the page.
-
-    Returns:
-        The path of the rendered HTML page.
     """
-    shutil.copytree(ROOT / "_extensions", directory / "_extensions")
+    extension = Path("_extensions", "preview-colour")
+    shutil.copytree(ROOT / extension, directory / extension)
     source = directory / "index.qmd"
     source.write_text(FIXTURE, encoding="utf-8")
     subprocess.run(["quarto", "render", str(source)], check=True, cwd=directory)
-    return directory / "index.html"
 
 
 def luminance(colour: str) -> float:
@@ -118,40 +114,37 @@ def contrast(foreground: str, background: str) -> float:
     return (lighter + 0.05) / (darker + 0.05)
 
 
-def check_scenario(page: Page, url: str, scheme: str | None) -> list[str]:
-    """Load the page in one colour scheme, click the mark, and check its colours.
+def check_scenario(page: Page, url: str) -> list[str]:
+    """Load the page, click the mark, and check its colours.
 
     Args:
-        page: Browser page, already set to the OS colour scheme.
+        page: Browser page, already set to the colour scheme of the scenario.
         url: Address of the rendered fixture.
-        scheme: Value for the `quarto-color-scheme` key, or None to leave it unset.
 
     Returns:
         One message for each failed check; empty when all checks pass.
     """
-    page.goto(url)
-    page.evaluate("localStorage.clear()")
-    if scheme is not None:
-        page.evaluate(f"localStorage.setItem('quarto-color-scheme', '{scheme}')")
-    page.reload()
+    page.goto(url, wait_until="networkidle")
     mark = page.locator("code button.preview-colour")
     mark.click()
     colours = mark.evaluate(
         """(mark) => {
-          const tooltip = mark.querySelector('.preview-colour-tooltip');
-          const glyph = mark.querySelector('span[style]');
-          const style = (element) => getComputedStyle(element);
+          const tooltip = getComputedStyle(mark, '::after');
+          const button = getComputedStyle(mark);
           return {
             body: document.body.className,
-            text: style(tooltip).color,
-            background: style(tooltip).backgroundColor,
-            glyph: style(glyph).color,
-            ring: style(mark).outlineColor,
-            code: style(mark.parentElement).color,
+            content: tooltip.content,
+            text: tooltip.color,
+            background: tooltip.backgroundColor,
+            glyph: getComputedStyle(mark.querySelector('span[style]')).color,
+            ring: button.outlineColor,
+            code: getComputedStyle(mark.parentElement).color,
           };
         }"""
     )
     failures = []
+    if colours["content"] == "none":
+        failures.append("no tooltip after the click")
     ratio = contrast(colours["text"], colours["background"])
     print(f"  body: {colours['body']}")
     print(
@@ -191,10 +184,12 @@ def main() -> int:
                     print(f"{name}:")
                     context = browser.new_context(color_scheme=os_scheme)
                     context.grant_permissions(["clipboard-read", "clipboard-write"])
+                    if page_scheme is not None:
+                        context.add_init_script(
+                            f"localStorage.setItem('quarto-color-scheme', '{page_scheme}')"
+                        )
                     page = context.new_page()
-                    failures += [
-                        f"{name}: {f}" for f in check_scenario(page, url, page_scheme)
-                    ]
+                    failures.extend(f"{name}: {f}" for f in check_scenario(page, url))
                     context.close()
                 browser.close()
         finally:
