@@ -11,6 +11,7 @@ local str = require(quarto.utils.resolve_path("_vendor/quarto-lua-modules/string
 local log = require(quarto.utils.resolve_path("_vendor/quarto-lua-modules/logging.lua"):gsub("%.lua$", ""))
 local meta_mod = require(quarto.utils.resolve_path("_vendor/quarto-lua-modules/metadata.lua"):gsub("%.lua$", ""))
 local pdoc = require(quarto.utils.resolve_path("_vendor/quarto-lua-modules/pandoc-helpers.lua"):gsub("%.lua$", ""))
+local html = require(quarto.utils.resolve_path("_vendor/quarto-lua-modules/html.lua"):gsub("%.lua$", ""))
 local colour = require(quarto.utils.resolve_path("_vendor/quarto-lua-modules/colour.lua"):gsub("%.lua$", ""))
 local schema = require(quarto.utils.resolve_path("_vendor/quarto-wizard/schema.lua"):gsub("%.lua$", ""))
 local check = require(quarto.utils.resolve_path("_vendor/quarto-lua-modules/schema-check.lua"):gsub("%.lua$", ""))
@@ -237,21 +238,6 @@ local function get_glyph_for_format(format)
 end
 
 
---- Whether the stylesheet and script for the HTML mark are already attached to the page.
-local html_dependency_added = false
-
---- Attach the stylesheet and the copy script for the HTML mark, once per document.
-local function ensure_html_dependency()
-  if html_dependency_added then return end
-  quarto.doc.add_html_dependency({
-    name = EXTENSION_NAME,
-    version = '1.1.0',
-    stylesheets = { 'preview-colour.css' },
-    scripts = { 'preview-colour.js' },
-  })
-  html_dependency_added = true
-end
-
 --- Create colour preview mark for HTML format.
 --- Accepts either an opaque hex colour or a CSS colour string (for keywords/alpha).
 --- The mark is a button, so it is reachable and operable from the keyboard.
@@ -261,7 +247,11 @@ end
 --- @param glyph string Glyph character to use for the preview.
 --- @return string HTML colour preview mark.
 local function create_html_colour_mark(css, label, glyph)
-  ensure_html_dependency()
+  html.ensure_html_dependency({
+    name = EXTENSION_NAME,
+    stylesheets = { 'preview-colour.css' },
+    scripts = { 'preview-colour.js' },
+  })
   local name = str.escape_html('Copy colour ' .. label)
   return '<button type="button" class="preview-colour" data-colour="' .. str.escape_html(label) ..
       '" aria-label="' .. name .. '" title="' .. name ..
